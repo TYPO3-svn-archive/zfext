@@ -1,0 +1,11 @@
+config.tx_zfext {
+	#Set this to your path to Zend Framework library and zfext will add it to include_path
+	includePaths.zfLibrary =
+	bootstrap.path = EXT:zfext/library/Zfext/Bootstrap.php
+	bootstrap.class = Zfext_Bootstrap
+	resources.frontcontroller.plugins.pluginAutoloader = Zfext_Controller_Plugin_Autoloader
+	resources.frontcontroller.defaultmodule = tx_zfext
+	resources.db.adapter = TYPO3
+	resources.translate.adapter = Zfext_Translate_Adapter_Typo3
+	resources.translate.data = simple
+}
