@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<T3locallang>
+	<meta type="array">
+		<description>Texts for plugin 'newloginbox'</description>
+		<type></type>
+		<csh_table></csh_table>
+		<labelContext type="array">
+		</labelContext>
+	</meta>
+	<data type="array">
+		<languageKey index="default" type="array">
+			<label index="translateme">This is the string in the default language.</label>
+		</languageKey>
+		<languageKey index="de" type="array">
+			<label index="translateme">Das ist der nach Deutsch übersetzte String</label>
+		</languageKey>
+	</data>
+</T3locallang>

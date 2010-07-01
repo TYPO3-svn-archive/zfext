@@ -1,0 +1,16 @@
+<strong>I am the view for the test action and your first twenty pages found are:</strong><br />
+<?php
+foreach($this->pages as $page):
+    echo '<a href="'.$this->url(array('gp:id'=>$page->uid)).'">'.$page->title.'</a><br />';
+endforeach;
+
+if ($this->forward):
+?>
+    I was forwarded from the indexAction. If you want to see me directly, click 
+    <a href="<?php echo $this->url(array('action'=>'test')); ?>">here</a>.
+<?php
+endif;
+?>
+<br />
+And here i present you a translated string:<br />
+<i>"<?php echo $this->translate('translateme'); ?>"</i>
