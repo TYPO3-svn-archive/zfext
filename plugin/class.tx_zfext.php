@@ -95,10 +95,10 @@ class tx_zfext extends tslib_pibase
 		
 		$conf = $GLOBALS['TSFE']->tmpl->setup['config.']['tx_zfext.'];
 		
-		if (!empty($conf['includePaths']['zfLibrary']) && 
-			is_string($conf['includePaths']['zfLibrary']))
+		if (!empty($conf['includePaths.']['zfLibrary']) && 
+			is_string($conf['includePaths.']['zfLibrary']))
 		{
-			$path = realpath(t3lib_div::getFileAbsFileName($conf['includePaths']['zfLibrary']));
+			$path = realpath(t3lib_div::getFileAbsFileName($conf['includePaths.']['zfLibrary']));
     		if ($path) {
     			set_include_path($path.PATH_SEPARATOR.get_include_path());
     		} else {
@@ -106,7 +106,7 @@ class tx_zfext extends tslib_pibase
     			return false;
     		}
 		}
-		unset($conf['includePaths']['zfLibrary']);
+		unset($conf['includePaths.']['zfLibrary']);
 		
 		require_once('Zend/Application.php');
 		

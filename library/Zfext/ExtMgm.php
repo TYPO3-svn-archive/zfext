@@ -127,7 +127,7 @@ class Zfext_ExtMgm
 	 * @param array $options Options and arguments (@see $_defaultPluginAttributes
 	 * and $_defaultPluginOptions)
 	 */
-	public static function addPItoST43($extKey, array $options = array())
+	public static function addPlugin($extKey, array $options = array())
 	{
 		$options = array_merge(
 			self::$_defaultPluginAttributes,
