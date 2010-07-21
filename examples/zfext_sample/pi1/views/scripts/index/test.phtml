@@ -1,16 +1,25 @@
-<strong>I am the view for the test action and your first twenty pages found are:</strong><br />
 <?php
-foreach($this->pages as $page):
-    echo '<a href="'.$this->url(array('gp:id'=>$page->uid)).'">'.$page->title.'</a><br />';
-endforeach;
-
+$this->headLink()->appendStylesheet('EXT:zfext_sample/public/css/zfextsample.css');
+?>
+<h4>I am the view for the test action</h4>
+<?
 if ($this->forward):
 ?>
-    I was forwarded from the indexAction. If you want to see me directly, click 
-    <a href="<?php echo $this->url(array('action'=>'test')); ?>">here</a>.
+<div class="zfextSampleForwardNotice">
+    (Psst: I was forwarded from the indexAction. If you want to see me directly, click 
+    <a href="<?php echo $this->url(array('action'=>'test')); ?>">here</a>.)
+</div>
 <?php
 endif;
 ?>
-<br />
-And here i present you a translated string:<br />
-<i>"<?php echo $this->translate('translateme'); ?>"</i>
+<p>Your first twenty pages found are</p>
+<ul>
+    <?php
+    foreach($this->pages as $page):
+        echo '<li><a href="'.$this->url(array('gp:id'=>$page->uid)).'">'.$page->title.'</a></li>';
+    endforeach;
+    ?>
+</ul>
+<p>
+Here is a translated string: <em>"<?php echo $this->translate('translateme'); ?>"</em>
+</p>
