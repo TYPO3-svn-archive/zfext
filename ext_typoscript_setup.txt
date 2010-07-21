@@ -4,6 +4,7 @@ config.tx_zfext {
 	bootstrap.path = EXT:zfext/library/Zfext/Bootstrap.php
 	bootstrap.class = Zfext_Bootstrap
 	resources.frontcontroller.plugins.pluginAutoloader = Zfext_Controller_Plugin_Autoloader
+	resources.frontcontroller.plugins.pluginHeadHelpers = Zfext_Controller_Plugin_HeadHelpers
 	resources.frontcontroller.defaultmodule = tx_zfext
 	resources.db.adapter = TYPO3
 	resources.translate.adapter = Zfext_Translate_Adapter_Typo3
