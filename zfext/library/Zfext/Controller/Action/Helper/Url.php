@@ -22,46 +22,48 @@
  * 
  * @copyright  Copyright (c) 2010 Christian Opitz - Netzelf GbR (http://netzelf.de)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU General Public License
- * @version    $Id$
+ * @version    $Id: Plugin.php 28 2010-06-27 20:53:56Z copitz $
  */
 
 /**
- * The default bootstraper for Zfext plugin
+ * Overrides the simple method from Zend Helper with a call to
+ * the regular url()-method that invokes the router.
+ * @see Zfext_Bootstrap::_initZfextActionHelper
  * 
  * @category   TYPO3
- * @package    Zfext
+ * @package    Zfext_Controller
+ * @subpackage Action
  * @author     Christian Opitz <co@netzelf.de>
  */
-class Zfext_Bootstrap extends Zend_Application_Bootstrap_Bootstrap
-{	
+class Zfext_Controller_Action_Helper_Url extends Zend_Controller_Action_Helper_Url
+{
 	/**
-	 * Sticks request, response and dispatcher together
+	 * Overrides parent simple method
+	 * 
+	 * @param string $action
+	 * @param string $controller
+	 * @param string $module
+	 * @param array $params
+	 * @return string
 	 */
-	protected function _initZfextFrontcontroller()
+	public function simple($action, $controller = null, $module = null, array $params = null) 
 	{
-		$this->bootstrap('zfext');
+		$request = $this->getRequest();
 		
-	    Zend_Controller_Front::getInstance()
-		->setResponse(new Zfext_Controller_Response_Plugin())
-		->setDispatcher(new Zfext_Controller_Dispatcher_Plugin());
-	}
-	
-	/**
-	 * Sets the router for TYPO3
-	 */
-	protected function _initRouter()
-	{
-		Zend_Controller_Front::getInstance()
-		->setRouter(new Zfext_Controller_Router_Typo3());
-	}
-	
-	/**
-	 * Override default action helper while its not using router in
-	 * its simple/direct method
-	 */
-	protected function _initZfextActionHelper() 
-	{
-		Zend_Controller_Action_HelperBroker::removeHelper('url');
-		Zend_Controller_Action_HelperBroker::addHelper(new Zfext_Controller_Action_Helper_Url());
+		if (!is_array($params))
+		{
+			$params = array();
+		}
+		if ($module !== null)
+		{
+			$params[$request->getModuleKey()] = $module;
+		}
+		if ($controller !== null) 
+		{
+			$params[$request->getControllerKey()] = $controller;
+		}
+		$params[$request->getActionKey()] = $action;
+		
+		return $this->url($params);
 	}
 }
