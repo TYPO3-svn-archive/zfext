@@ -34,6 +34,8 @@
  */
 class Zfext_ExtMgm
 {
+    const TS_PATH = 'plugin.tx_zfext.zfext';
+    
 	/**
 	 * @var array All plugin options
 	 */
@@ -88,7 +90,7 @@ class Zfext_ExtMgm
 	        $libraryKey .= '_'.str_replace('/','_',$directory);
 	        $libraryPath .= '/'.$directory;
 	    }
-	    $setup = 'config.tx_zfext.includePaths.'.$libraryKey.' = '.$libraryPath;
+	    $setup = self::TS_PATH.'.includePaths.'.$libraryKey.' = '.$libraryPath;
 	    if ($autoload)
 	    {
 	        try {
@@ -112,7 +114,7 @@ class Zfext_ExtMgm
 	        }
 	        if (count($namespaces))
 	        {
-	            $setup .= "\nconfig.tx_zfext.resources.zfext.autoloadNamespaces ".
+	            $setup .= "\n".self::TS_PATH.'.resources.zfext.autoloadNamespaces '.
 	                      ':= addToList('.implode(',',$namespaces).')';
 	        }
 	    }
@@ -137,22 +139,73 @@ class Zfext_ExtMgm
 		
 		$prefixId = t3lib_extMgm::getCN($extKey).$options['suffix'];
 		
-		t3lib_extMgm::addPItoST43(
+		self::_addPiToSt43(
 			$extKey,
 			trim($options['directory'],"\\/").'/class.'.$prefixId.'.php',
 			$options['suffix'],
 			$options['type'],
 			$options['cached']
 		);
-		t3lib_extMgm::addTypoScriptSetup(
-			"#Proxy over Zfext\n".
-			"plugin.{$prefixId} < plugin.tx_zfext\n".
-			"plugin.{$prefixId} = ".($options['cached'] ? 'USER' : 'USER_INT')."\n".
-			"# Zfext needs the prefixId to recognize the plugin\n".
-			"plugin.{$prefixId}.prefixId = {$prefixId}"
-		);
 		
 		self::addPluginToBootstrap($extKey, $prefixId, $options);
+	}
+	
+	protected static function _addPiToSt43($key, $classFile = '', $prefix = '', $type = 'list_type', $cached = 0)
+	{
+	    global $TYPO3_LOADED_EXT;
+		
+	    $prefixId = t3lib_extMgm::getCN($key).$prefix;
+	    $comment = '# Setting '.$key.' plugin TypoScript';
+	    $EOL = "\n";
+
+			// General plugin:
+		t3lib_extMgm::addTypoScript(
+		    $key,
+		    'setup',
+		    $comment.$EOL.
+    		'plugin.'.$prefixId.' = USER'.($cached ? '' : '_INT').$EOL.
+            'plugin.'.$prefixId.' {'.$EOL.
+            'includeLibs = '.$TYPO3_LOADED_EXT['zfext']['siteRelPath'].'plugin/class.tx_zfext.php'.$EOL.
+            'userFunc = tx_zfext->main'.$EOL.
+		    '# ZfExt related settings - dont\'t touch this unless you know what you\'re doing!'.$EOL.
+		    'zfext = '.$key.'.'.$prefixId.$EOL.
+            '}'
+		);
+
+			// After ST43:
+		switch($type)
+		{
+			case 'list_type':
+				$addLine = 'tt_content.list.20.'.$key.$prefix.' = < plugin.'.$prefixId;
+			break;
+			case 'menu_type':
+				$addLine = 'tt_content.menu.20.'.$key.$prefix.' = < plugin.'.$prefixId;
+			break;
+			case 'splash_layout':
+				$addLine = 'tt_content.splash.'.$key.$prefix.' = < plugin.'.$prefixId;
+			break;
+			case 'CType':
+				$addLine = 
+				'tt_content.'.$key.$prefix.' = COA'.$EOL.
+                'tt_content.'.$key.$prefix.' {'.$EOL.
+				'10 = < lib.stdheader'.$EOL.
+                '20 = < plugin.'.$prefixId.$EOL.
+                '}';
+			break;
+			case 'header_layout':
+				$addLine = 'lib.stdheader.10.'.$key.$prefix.' = < plugin.'.$prefixId;
+			break;
+			case 'includeLib':
+				$addLine = 'page.1000 = < plugin.'.$prefixId;
+			break;
+			default:
+				$addLine = '';
+			break;
+		}
+		if ($addLine)
+		{
+			t3lib_extMgm::addTypoScript($key, 'setup', $comment.$EOL.$addLine, 43);
+		}
 	}
 	
 	/**
@@ -172,7 +225,7 @@ class Zfext_ExtMgm
 		
 		$pluginOptions['extKey'] = $extKey; 
 		
-		$setup = "config.tx_zfext {\n";
+		$setup = self::TS_PATH." {\n";
 		
 		//Add controller directory
 		$setup .= 'resources.frontcontroller.controllerdirectory.'.

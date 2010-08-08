@@ -93,7 +93,7 @@ class tx_zfext extends tslib_pibase
 		    return true;
 		}
 		
-		$conf = $GLOBALS['TSFE']->tmpl->setup['config.']['tx_zfext.'];
+		$conf = $GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_zfext.']['zfext.'];
 		
 		if (!empty($conf['includePaths.']['zfLibrary']) && 
 			is_string($conf['includePaths.']['zfLibrary']))
@@ -137,8 +137,9 @@ class tx_zfext extends tslib_pibase
 	{
 	    $this->conf = $conf;
 	    
-	    $this->prefixId = $conf['prefixId'];
-	    $this->extKey = Zfext_ExtMgm::getPluginOption($this->prefixId, 'extKey');
+	    $signature = explode('.', $conf['zfext']);
+	    $this->extKey = $signature[0];
+	    $this->prefixId = $signature[1];
 	    
 	    $controllerPath = realpath(
 	        Zend_Controller_Front::getInstance()
