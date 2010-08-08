@@ -22,7 +22,7 @@
  * 
  * @copyright  Copyright (c) 2010 Christian Opitz - Netzelf GbR (http://netzelf.de)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU General Public License
- * @version    $Id: Plugin.php 28 2010-06-27 20:53:56Z copitz $
+ * @version    $Id$
  */
 
 /**
