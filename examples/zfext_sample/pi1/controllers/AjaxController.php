@@ -18,6 +18,6 @@ class Tx_ZfextSample_Pi1_AjaxController extends Zend_Controller_Action
     {
         $this->_helper->viewRenderer->setNeverRender();
         
-        echo 'Hi - i am the ajax action';
+        echo 'Ok, there was a XmlHttpRequest in Ajax-Controller - here I am.';
     }
 }

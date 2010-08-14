@@ -1,0 +1,9 @@
+<span id="zfextSampleAjaxDiv">
+    <?php
+    echo $this->ajaxLink(
+    	"jQuery, get me some Ajax-Content!",
+    	$this->url(array('controller'=>'ajax'),'xhr'),
+        array('update' => '#zfextSampleAjaxDiv'));
+    ?>
+</span>
+<?php echo $this->jQuery(); ?>

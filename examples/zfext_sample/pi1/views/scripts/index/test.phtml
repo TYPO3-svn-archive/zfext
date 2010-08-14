@@ -5,7 +5,7 @@ $this->headLink()->appendStylesheet('EXT:zfext_sample/public/css/zfextsample.css
 <?
 if ($this->forward):
 ?>
-<div class="zfextSampleForwardNotice">
+<div class="zfextNotice zfextSampleForwardNotice">
     (Psst: I was forwarded from the indexAction. If you want to see me directly, click 
     <a href="<?php echo $this->url(array('action'=>'test')); ?>">here</a>.)
 </div>
@@ -23,3 +23,7 @@ endif;
 <p>
 Here is a translated string: <em>"<?php echo $this->translate('translateme'); ?>"</em>
 </p>
+<p>If you want to test some fancy Ajax-functionality - here's the place: 
+<?php echo $this->action('index', 'ajax', 'tx_zfextsample_pi1'); ?><br />
+<span class="zfextNotice">In fact that's not just a test for the eID-script of ZFext but also for 
+ZendX_JQuery-component and the action-helper.)</span></p>
