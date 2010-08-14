@@ -140,6 +140,14 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
      */
     public function assemble($userParams, $name = null, $reset = false, $encode = true)
     {
+        if (is_string($name) && stripos($name, 'xhr') === 0)
+        {
+            $parts = explode('.', $name);
+            $name = (isset($parts[1])) ? $parts[1] : null;
+            $userParams['gp:eID'] = 'zfext';
+            $userParams['gp:tx_zfext'] = array('eid' => $this->_plugin->prefixId);
+        }
+        
         if (!count($userParams))
         {
             return $this->_plugin->pi_linkTP_keepPIvars_url();
@@ -219,6 +227,13 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
         return $this->_plugin->cObj->lastTypoLinkUrl;
     }
     
+    /**
+     * Wrapper to recursively merge arrays
+     * 
+     * @param array $params1
+     * @param array $params2
+     * @return array
+     */
     protected function _mergeParams($params1, $params2)
     {
         if (!count($params2))
