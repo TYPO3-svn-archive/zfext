@@ -15,4 +15,6 @@ Zfext_ExtMgm::addPlugin($_EXTKEY, array(
 ));
 
 Zfext_ExtMgm::addLibrary($_EXTKEY, 'library', true);
+
+$TYPO3_CONF_VARS['FE']['eID_include']['zfext'] = 'EXT:zfext/plugin/index.php';
 ?>
