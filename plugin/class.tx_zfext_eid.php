@@ -25,6 +25,12 @@
  * @version    $Id$
  */
 
+require_once(PATH_tslib.'class.tslib_fe.php');
+require_once(PATH_tslib.'class.tslib_content.php');
+require_once(PATH_t3lib.'class.t3lib_userauth.php');
+require_once(PATH_t3lib.'class.t3lib_page.php');
+require_once(PATH_t3lib.'class.t3lib_befunc.php');
+require_once(PATH_tslib.'class.tslib_feuserauth.php');
 require_once(t3lib_extMgm::extPath('zfext').'plugin/class.tx_zfext.php');
 
 /**
@@ -51,9 +57,16 @@ class tx_zfext_eid extends tx_zfext
             return;
         }
         
-        $this->_tsfe = $GLOBALS['TSFE'] = t3lib_div::makeInstance(
+        /* $this->_tsfe = $GLOBALS['TSFE'] = t3lib_div::makeInstance(
         	'tslib_fe', 
             $GLOBALS['TYPO3_CONF_VARS'], 
+            (integer) t3lib_div::_GET('id'),
+            (integer) t3lib_div::_GP('type')
+        ); */
+        //Compatible to 4.2:
+        $temp_TSFEclassName = t3lib_div::makeInstanceClassName('tslib_fe');
+		$this->_tsfe = $GLOBALS['TSFE'] = new $temp_TSFEclassName(
+			$GLOBALS['TYPO3_CONF_VARS'], 
             (integer) t3lib_div::_GET('id'),
             (integer) t3lib_div::_GP('type')
         );
@@ -66,10 +79,10 @@ class tx_zfext_eid extends tx_zfext
 	    $this->_tsfe->determineId();
         $this->_tsfe->getPageAndRootline();
         
-        $this->_tsfe->getFromCache();
+        //Seems to be needed prior to 4.3 to only:
         $this->_tsfe->getConfigArray();
-	    
-	    if (empty($GLOBALS['TSFE']->tmpl->setup['plugin.'][$conf['eid'].'.']['zfext']))
+        
+        if (empty($this->_tsfe->tmpl->setup['plugin.'][$conf['eid'].'.']['zfext']))
 	    {
 	        return;
 	    }
@@ -79,7 +92,7 @@ class tx_zfext_eid extends tx_zfext
         
         $this->cObj = t3lib_div::makeInstance('tslib_cObj');
 	    
-	    return parent::main('', $GLOBALS['TSFE']->tmpl->setup['plugin.'][$conf['eid'].'.']);
+	    return parent::main('', $this->_tsfe->tmpl->setup['plugin.'][$conf['eid'].'.']);
     }
     
     /* (non-PHPdoc)
