@@ -48,7 +48,8 @@ class Zend_Application_Resource_Zfext extends Zend_Application_Resource_Resource
             unset($options['autoloadNamespaces']);
         }
         
-        Zfext_ExtMgm::setPluginOptions($options);
+        //Not needed anymore - ExtMgm gathers options itself
+        //Zfext_ExtMgm::setPluginOptions($options);
     }
     
     /**

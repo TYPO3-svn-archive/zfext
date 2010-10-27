@@ -223,8 +223,6 @@ class Zfext_ExtMgm
 			self::$_defaultPluginOptions
 		);
 		
-		$pluginOptions['extKey'] = $extKey; 
-		
 		$setup = self::TS_PATH." {\n";
 		
 		//Add controller directory
@@ -233,12 +231,15 @@ class Zfext_ExtMgm
 		trim($options['directory'],"/\\").'/'.
 		trim($options['controllerDirectory'],"/\\")."\n";
 		
-		$setup .= 'resources.zfext.'.$prefixId." {\n";
-		foreach ($pluginOptions as $key => $value)
-		{
-			$setup .= $key.' = '.($value === false ? 0 : strval($value))."\n";
+		if (count($pluginOptions)) {
+			$setup .= 'resources.zfext.'.$prefixId." {\n";
+			foreach ($pluginOptions as $key => $value)
+			{
+				$setup .= $key.' = '.($value === false ? 0 : strval($value))."\n";
+			}
+			$setup .= "}";
 		}
-		$setup .= "}\n}";
+		$setup .= "\n}";
 		
 		t3lib_extMgm::addTypoScriptSetup($setup);
 	}
@@ -258,8 +259,9 @@ class Zfext_ExtMgm
 	        return $useNamespace;
 	    }
 	    
-	    $extKey = self::getPluginOption($prefixId, 'extKey');
-		$keyParts = explode('_', $extKey);
+	    
+		$extKey = self::getPluginOption($prefixId, 'extKey');
+	    $keyParts = explode('_', $extKey);
 		if (strtolower($keyParts[0]) == 'tx')
 		{
 			unset($keyParts[0]);
@@ -291,22 +293,28 @@ class Zfext_ExtMgm
 	 * 
 	 * @param array $options
 	 */
-	public static function setPluginOptions($options)
+	protected static function _checkPluginOptions($prefixId)
 	{
-		$_defaultPluginOptions = array();
+		if (is_array(self::$_pluginOptions[$prefixId])) {
+			return;
+		}
+		
+		if (empty($GLOBALS['TSFE']->tmpl->setup['plugin.'][$prefixId.'.']['zfext'])) {
+	    	throw new Zfext_Exception($prefixId.' is not a ZfExt-plugin!');
+	    }
+		
+		$options = (array) $GLOBALS['TSFE']->tmpl->setup['plugin.'][$prefixId.'.']['zfext.'];
+		
+	    $parts = explode('.', $GLOBALS['TSFE']->tmpl->setup['plugin.'][$prefixId.'.']['zfext']);
+	    $options['extKey'] = $parts[0];
+	    
 		foreach (self::$_defaultPluginOptions as $key => $val)
 		{
-		    if (!empty($val)) {
-		        $_defaultPluginOptions[$key] = $val;
+		    if (!empty($val) && empty($options[$key])) {
+		        $options[$key] = $val;
 		    }
 		}
-	    foreach ($options as $prefixId => $pluginOptions)
-		{
-			self::$_pluginOptions[$prefixId] = array_merge(
-				$_defaultPluginOptions,
-				$pluginOptions
-			);
-		}
+	    self::$_pluginOptions[$prefixId] = $options;
 	}
 	
 	/**
@@ -318,7 +326,9 @@ class Zfext_ExtMgm
 	 */
 	public static function setPluginOption($prefixId, $key, $value)
 	{
-	    if (!is_array(self::$_pluginOptions[$prefixId]))
+	    self::_checkPluginOptions($prefixId);
+	    
+		if (!is_array(self::$_pluginOptions[$prefixId]))
 	    {
 	        self::$_pluginOptions[$prefixId] = self::$_defaultPluginOptions;
 	    }
@@ -333,7 +343,9 @@ class Zfext_ExtMgm
 	 */
 	public static function getPluginOptions($prefixId, $filterOutEmpty = true)
 	{
-		return isset(self::$_pluginOptions[$prefixId]) ? self::$_pluginOptions[$prefixId] : array();
+		self::_checkPluginOptions($prefixId);
+		
+		return self::$_pluginOptions[$prefixId];
 	}
 	
 	/**
@@ -345,11 +357,8 @@ class Zfext_ExtMgm
 	 */
 	public static function getPluginOption($prefixId, $key)
 	{
-		if (!isset(self::$_pluginOptions[$prefixId]) || 
-		    !is_array(self::$_pluginOptions[$prefixId]))
-		{
-		    return null;
-		}
+		self::_checkPluginOptions($prefixId);
+		
 	    if (!isset(self::$_pluginOptions[$prefixId][$key]))
 	    {
 	        return null;

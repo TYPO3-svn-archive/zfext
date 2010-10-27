@@ -71,13 +71,67 @@ class tx_zfext extends tslib_pibase
     	    return '';
 		}
 		
+		set_error_handler(array($this, 'errorHandler'), E_ALL ^ E_NOTICE);
+		
 		$this->setupPlugin($conf);
     		
 		self::$_application->run();
 		
+		restore_error_handler();
+		
 		return $this->pi_wrapInBaseClass(
 			Zend_Controller_Front::getInstance()->getResponse()->getBody()
 		);
+	}
+	
+	/**
+	 * Catch errors and throw an error exception so that ZF can catch it and output
+	 * it neatly with the errorHandler-plugin.
+	 * 
+	 * @param integer $errno
+	 * @param string $errstr
+	 * @param string $errfile
+	 * @param integer $errline
+	 * @param string $errcontext
+	 */
+	public function errorHandler($errno, $errstr, $errfile, $errline, $errcontext)
+	{
+		switch ( $errno ) {
+			case E_USER_ERROR:
+				$type = 'Fatal Error';
+				$exit = TRUE;
+			break;
+			case E_USER_WARNING:
+			case E_WARNING:
+				$type = 'Warning';
+			break;
+			case E_USER_NOTICE:
+			case E_NOTICE:
+			case @E_STRICT:
+				$type = 'Notice';
+			break;
+			case @E_RECOVERABLE_ERROR:
+				$type = 'Catchable';
+			break;
+			default:
+				$type = 'Unknown Error';
+				$exit = true;
+			break;
+		}
+
+		// deprecated erkennen
+		if($errno==E_USER_NOTICE && preg_match('/^.*\(\)\sis\sdeprecated$/U', $errstr))
+		{
+			$stack		= debug_backtrace();
+			$deprecated	= 'Deprecated: Function ' . $stack[1]['args'][0] . ' in ' . $stack[2]['file'] . ' on line ' . $stack[2]['line'];
+			$file		= $stack[2]['file'];
+			$line		= $stack[2]['line'];
+
+			throw new ErrorException($deprecated, 0, $errno, $errfile, $errline);
+			return;
+		}
+
+		throw new ErrorException($type.': '.$errstr, 0, $errno, $errfile, $errline);
 	}
 	
 	/**
