@@ -34,14 +34,19 @@
  */
 class Zfext_Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 {	
+	protected static $_firstRun = true;
+	
 	/**
 	 * Sticks request, response and dispatcher together
 	 */
 	protected function _initZfextFrontcontroller()
-	{
-		$this->bootstrap('zfext');
-		
-	    Zend_Controller_Front::getInstance()
+	{		
+	    if (!self::$_firstRun) {
+	    	Zend_Controller_Front::getInstance()->resetInstance();
+	    }else{
+	    	self::$_firstRun = false;
+	    }
+		Zend_Controller_Front::getInstance()
 		->setResponse(new Zfext_Controller_Response_Plugin())
 		->setDispatcher(new Zfext_Controller_Dispatcher_Plugin());
 	}

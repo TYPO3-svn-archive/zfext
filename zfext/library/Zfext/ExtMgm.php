@@ -34,12 +34,14 @@
  */
 class Zfext_ExtMgm
 {
-    const TS_PATH = 'plugin.tx_zfext.zfext';
+    const TS_PATH = 'plugin.tx_zfext';
     
 	/**
 	 * @var array All plugin options
 	 */
 	protected static $_pluginOptions = array();
+	
+	protected static $_zfLoaded = false;
 	
 	/**
 	 * @var array Default attributes for addPItoST43()
@@ -82,18 +84,20 @@ class Zfext_ExtMgm
 	 */
 	public static function addLibrary($extKey, $directory = null, $autoload = true)
 	{
-	    $libraryKey = t3lib_extMgm::getCN($extKey);
 	    $libraryPath = 'EXT:'.$extKey;
+	    //$libraryKey = t3lib_extMgm::getCN($extKey);
+	    $libraryKey = $extKey;
 	    if ($directory != null && is_string($directory))
 	    {
 	        $directory = trim(str_replace("\\",'/',$directory), '/');
-	        $libraryKey .= '_'.str_replace('/','_',$directory);
+	        //$libraryKey .= '_'.str_replace('/','_',$directory);
 	        $libraryPath .= '/'.$directory;
 	    }
+	    
 	    $setup = self::TS_PATH.'.includePaths.'.$libraryKey.' = '.$libraryPath;
 	    if ($autoload)
 	    {
-	        try {
+	    	try {
 	            $iterator = new DirectoryIterator(t3lib_extMgm::extPath($extKey).$directory);
 	        }catch(Exception $e)
 	        {
@@ -114,11 +118,43 @@ class Zfext_ExtMgm
 	        }
 	        if (count($namespaces))
 	        {
-	            $setup .= "\n".self::TS_PATH.'.resources.zfext.autoloadNamespaces '.
+	            $setup .= "\n".self::TS_PATH.'.autoloadNamespaces '.
 	                      ':= addToList('.implode(',',$namespaces).')';
 	        }
 	    }
 	    t3lib_extMgm::addTypoScriptSetup($setup);
+	}
+	
+	public static function loadLibrary($extKey)
+	{
+		$paths = $GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_zfext.']['includePaths.'];
+		$loadPaths = array();
+		
+		if (!self::$_zfLoaded) {
+			if (!empty($paths['zfLibrary']) && is_string($paths['zfLibrary'])) {
+				$loadPaths[] = realpath(t3lib_div::getFileAbsFileName($paths['zfLibrary']));
+			}
+		}
+		
+		if (!empty($extKey)) {
+			$loadPaths[] = realpath(t3lib_div::getFileAbsFileName($paths[$extKey]));
+		}
+		
+		if (count($loadPaths)) {
+			$loadPaths[] = get_include_path();
+			set_include_path(implode(PATH_SEPARATOR, $loadPaths));
+		}
+		
+		if (!self::$_zfLoaded) {
+			$nsList = $GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_zfext.']['autoloadNamespaces'];
+        	if (strlen(trim($nsList,','))) {
+        		require_once 'Zend/Loader/Autoloader.php';
+		        $namespaces = array_unique(explode(',',$nsList));
+		        Zend_Loader_Autoloader::getInstance()->registerNamespace($namespaces);
+        	}
+		}
+		
+		self::$_zfLoaded = true;
 	}
 	
 	/**
@@ -147,7 +183,28 @@ class Zfext_ExtMgm
 			$options['cached']
 		);
 		
-		self::addPluginToBootstrap($extKey, $prefixId, $options);
+		$pluginOptions = array_intersect_key(
+			$options,
+			self::$_defaultPluginOptions
+		);
+		
+		$setup = "plugin.{$prefixId} {\n";
+		
+		//Add controller directory
+		$setup .= 'zfext.resources.frontcontroller.controllerdirectory.'.
+		$prefixId .' = EXT:'.$extKey.'/'.
+		trim($options['directory'],"/\\").'/'.
+		trim($options['controllerDirectory'],"/\\")."\n";
+		
+		if (count($pluginOptions)) {
+			foreach ($pluginOptions as $key => $value)
+			{
+				$setup .= $key.' = '.($value === false ? 0 : strval($value))."\n";
+			}
+		}
+		$setup .= "\n}";
+		
+		t3lib_extMgm::addTypoScriptSetup($setup);
 	}
 	
 	protected static function _addPiToSt43($key, $classFile = '', $prefix = '', $type = 'list_type', $cached = 0)
@@ -168,7 +225,8 @@ class Zfext_ExtMgm
             'includeLibs = '.$TYPO3_LOADED_EXT['zfext']['siteRelPath'].'plugin/class.tx_zfext.php'.$EOL.
             'userFunc = tx_zfext->main'.$EOL.
 		    '# ZfExt related settings - dont\'t touch this unless you know what you\'re doing!'.$EOL.
-		    'zfext = '.$key.'.'.$prefixId.$EOL.
+		    (($key != 'zfext') ? 'zfext = < '.self::TS_PATH.'.zfext'.$EOL : '').
+		    'zfext.signature = '.$key.'.'.$prefixId.$EOL.
             '}'
 		);
 
@@ -206,42 +264,6 @@ class Zfext_ExtMgm
 		{
 			t3lib_extMgm::addTypoScript($key, 'setup', $comment.$EOL.$addLine, 43);
 		}
-	}
-	
-	/**
-	 * Adds the controller directory and registers the plugin to
-	 * the Zfext-Resource
-	 * 
-	 * @param string $extKey The extension key
-	 * @param string $prefixId The prefix id as used by TYPO3
-	 * @param array $options All options for the plugin
-	 */
-	public static function addPluginToBootstrap($extKey, $prefixId, $options)
-	{
-		$pluginOptions = array_intersect_key(
-			$options,
-			self::$_defaultPluginOptions
-		);
-		
-		$setup = self::TS_PATH." {\n";
-		
-		//Add controller directory
-		$setup .= 'resources.frontcontroller.controllerdirectory.'.
-		$prefixId .' = EXT:'.$extKey.'/'.
-		trim($options['directory'],"/\\").'/'.
-		trim($options['controllerDirectory'],"/\\")."\n";
-		
-		if (count($pluginOptions)) {
-			$setup .= 'resources.zfext.'.$prefixId." {\n";
-			foreach ($pluginOptions as $key => $value)
-			{
-				$setup .= $key.' = '.($value === false ? 0 : strval($value))."\n";
-			}
-			$setup .= "}";
-		}
-		$setup .= "\n}";
-		
-		t3lib_extMgm::addTypoScriptSetup($setup);
 	}
 	
 	/**
@@ -299,13 +321,13 @@ class Zfext_ExtMgm
 			return;
 		}
 		
-		if (empty($GLOBALS['TSFE']->tmpl->setup['plugin.'][$prefixId.'.']['zfext'])) {
+		$options = (array) $GLOBALS['TSFE']->tmpl->setup['plugin.'][$prefixId.'.']['zfext.'];
+		
+		if (empty($options['signature'])) {
 	    	throw new Zfext_Exception($prefixId.' is not a ZfExt-plugin!');
 	    }
 		
-		$options = (array) $GLOBALS['TSFE']->tmpl->setup['plugin.'][$prefixId.'.']['zfext.'];
-		
-	    $parts = explode('.', $GLOBALS['TSFE']->tmpl->setup['plugin.'][$prefixId.'.']['zfext']);
+	    $parts = explode('.', $options['signature']);
 	    $options['extKey'] = $parts[0];
 	    
 		foreach (self::$_defaultPluginOptions as $key => $val)

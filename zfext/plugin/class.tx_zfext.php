@@ -67,21 +67,38 @@ class tx_zfext extends tslib_pibase
 	 */
 	public function main($content, $conf)
 	{
-		if (!$this->setupApplication()) {
-    	    return '';
-		}
+		$this->setConf($conf);
 		
 		set_error_handler(array($this, 'errorHandler'), E_ALL ^ E_NOTICE);
 		
-		$this->setupPlugin($conf);
-    		
-		self::$_application->run();
+		if (class_exists('Zend_Controller_Front', false)) {
+			Zend_Controller_Front::getInstance()->getResponse()->clearBody();
+		}
+		
+		Zfext_ExtMgm::loadLibrary('zfext');
+		
+		$this->setupPlugin();
+		
+		$application = new Zend_Application(
+			t3lib_extMgm::extPath($this->extKey).'pi1',
+			$this->extractOptions($this->conf['zfext.'])
+		);
+		$application->bootstrap()->run();
 		
 		restore_error_handler();
 		
 		return $this->pi_wrapInBaseClass(
 			Zend_Controller_Front::getInstance()->getResponse()->getBody()
 		);
+	}
+	
+	protected function setConf($conf)
+	{
+		if ($conf['zfext'] == '< plugin.tx_zfext.zfext') {
+			$conf['zfext.'] = t3lib_div::array_merge_recursive_overrule(
+				$GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_zfext.']['zfext.'], $conf['zfext.']);
+		}
+		$this->conf = $conf;
 	}
 	
 	/**
@@ -135,46 +152,6 @@ class tx_zfext extends tslib_pibase
 	}
 	
 	/**
-	 * Sticks the application together and returns true if everything
-	 * seems to be okay
-	 * 
-	 * @return boolean
-	 */
-	protected function setupApplication()
-	{
-		if (self::$_application)
-		{
-			Zend_Controller_Front::getInstance()->getResponse()->clearBody();
-		    return true;
-		}
-		
-		$conf = $GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_zfext.']['zfext.'];
-		
-		if (!empty($conf['includePaths.']['zfLibrary']) && 
-			is_string($conf['includePaths.']['zfLibrary']))
-		{
-			$path = realpath(t3lib_div::getFileAbsFileName($conf['includePaths.']['zfLibrary']));
-    		if ($path) {
-    			set_include_path($path.PATH_SEPARATOR.get_include_path());
-    		} else {
-    			t3lib_div::devLog($path.' seems not to exist. Did not add it!', $this->extKey);
-    			return false;
-    		}
-		}
-		unset($conf['includePaths.']['zfLibrary']);
-		
-		require_once('Zend/Application.php');
-		
-		self::$_application = new Zend_Application(
-			t3lib_extMgm::extPath($this->extKey).'pi1', 
-			$this->extractOptions($conf)
-		);
-		self::$_application->bootstrap();
-		
-		return true;
-	}
-	
-	/**
 	 * Detects the prefixId, extKey and $scriptRelPath (latter only points to
 	 * the plugin directory in the hope that nobody needs the script itself)
 	 * 
@@ -188,18 +165,14 @@ class tx_zfext extends tslib_pibase
 	 * 
 	 * @param unknown_type $conf
 	 */
-	protected function setupPlugin($conf)
+	protected function setupPlugin()
 	{
-	    $this->conf = $conf;
-	    
-	    $signature = explode('.', $conf['zfext']);
+	    $signature = explode('.', $this->conf['zfext.']['signature']);
 	    $this->extKey = $signature[0];
 	    $this->prefixId = $signature[1];
 	    
-	    $controllerPath = realpath(
-	        Zend_Controller_Front::getInstance()
-	        ->getControllerDirectory($this->prefixId)
-	    );
+	    $controllerPath = t3lib_div::getFileAbsFileName(
+	    	$this->conf['zfext.']['resources.']['frontcontroller.']['controllerdirectory.'][$this->prefixId]);
 		$extPath = realpath(t3lib_extMgm::extPath($this->extKey));
 		$this->scriptRelPath = substr($controllerPath, strlen($extPath) + 1);
 	    

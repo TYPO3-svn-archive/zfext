@@ -81,7 +81,13 @@ class Zfext_Translate_Adapter_Typo3 extends Zend_Translate_Adapter
         
         if (!Zfext_Plugin::getInstance()->LOCAL_LANG_loaded)
         {
-            Zfext_Plugin::getInstance()->pi_loadLL();
+            $dir = Zend_Controller_Front::getInstance()->getDispatcher()->getControllerDirectory();
+            $dir = realpath($dir.'/../');
+            if (is_readable($dir.'/locallang.php') || is_readable($dir.'/locallang.xml')) {
+        		Zfext_Plugin::getInstance()->pi_loadLL();
+            }else{
+            	Zfext_Plugin::getInstance()->LOCAL_LANG_loaded = true;
+            }
         }
         
         return Zfext_Plugin::getInstance()->pi_getLL($messageId, $alt);

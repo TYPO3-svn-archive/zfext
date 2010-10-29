@@ -1,6 +1,7 @@
+#Set this to your path to Zend Framework library and zfext will add it to include_path
+plugin.tx_zfext.includePaths.zfLibrary =
+
 plugin.tx_zfext.zfext {
-	#Set this to your path to Zend Framework library and zfext will add it to include_path
-	includePaths.zfLibrary =
 	bootstrap.path = EXT:zfext/library/Zfext/Bootstrap.php
 	bootstrap.class = Zfext_Bootstrap
 	resources.frontcontroller.plugins.pluginAutoloader = Zfext_Controller_Plugin_Autoloader
