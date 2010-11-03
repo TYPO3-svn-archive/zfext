@@ -125,19 +125,36 @@ class Zfext_ExtMgm
 	    t3lib_extMgm::addTypoScriptSetup($setup);
 	}
 	
+	/**
+	 * Add a library to the include path and init autoload for it if required -
+	 * loads Zend Framework when configured in plugin.tx_zfext.includePaths.zfLibrary
+	 * 
+	 * @param string $extKey
+	 */
 	public static function loadLibrary($extKey)
 	{
+		if ($GLOBALS['TSFE']->tmpl->setup == null) {
+			// TYPO3 is in an early state and no template is
+			// fetched yet - have to do that here because we
+			// need the paths from the setup
+			$GLOBALS['TSFE']->initTemplate();
+			$GLOBALS['TSFE']->checkAlternativeIdMethods();
+			$GLOBALS['TSFE']->determineId();
+			$GLOBALS['TSFE']->getPageAndRootline();
+			$GLOBALS['TSFE']->getConfigArray();
+		}
+		
 		$paths = $GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_zfext.']['includePaths.'];
 		$loadPaths = array();
 		
 		if (!self::$_zfLoaded) {
 			if (!empty($paths['zfLibrary']) && is_string($paths['zfLibrary'])) {
-				$loadPaths[] = realpath(t3lib_div::getFileAbsFileName($paths['zfLibrary']));
+				$loadPaths[] = self::realpath($paths['zfLibrary']);
 			}
 		}
 		
-		if (!empty($extKey)) {
-			$loadPaths[] = realpath(t3lib_div::getFileAbsFileName($paths[$extKey]));
+		if (!empty($paths[$extKey])) {
+			$loadPaths[] = self::realpath($paths[$extKey]);
 		}
 		
 		if (count($loadPaths)) {
@@ -155,6 +172,24 @@ class Zfext_ExtMgm
 		}
 		
 		self::$_zfLoaded = true;
+	}
+	
+	/**
+	 * Returns canonicalized absolute pathname for TYPO3-paths
+	 * 
+	 * @param string $path
+	 * @return string
+	 */
+	public static function realpath($path)
+	{
+		// Check if path is extension root path (EXT:extKey) because t3lib_div::getFileAbsFileName
+		// does not return anything for that :S
+		if (substr($path, 0, 4) == 'EXT:' && strpos($extKey = trim(substr($path, 4),'/'), '/') === false) {
+			$path = t3lib_extMgm::extPath($extKey);
+		}else{
+			$path = t3lib_div::getFileAbsFileName($path);
+		}
+		return realpath($path);
 	}
 	
 	/**
