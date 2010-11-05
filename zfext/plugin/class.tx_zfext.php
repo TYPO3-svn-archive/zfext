@@ -79,6 +79,8 @@ class tx_zfext extends tslib_pibase
 		
 		$this->setupPlugin();
 		
+		Zfext_ExtMgm::loadLibrary($this->extKey);
+		
 		$application = new Zend_Application(
 			t3lib_extMgm::extPath($this->extKey).'pi1',
 			$this->extractOptions($this->conf['zfext.'])
