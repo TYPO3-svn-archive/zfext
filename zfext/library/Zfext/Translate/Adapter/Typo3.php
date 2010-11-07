@@ -71,7 +71,7 @@ class Zfext_Translate_Adapter_Typo3 extends Zend_Translate_Adapter
      * @param  string $alt Alternative string to return IF no value is found set for the key
      * @return string
      */
-    public function translate($messageId, $alt = '')
+    public function translate($messageId, $alt = null)
     {
         if (is_array($messageId))
         {
@@ -90,7 +90,7 @@ class Zfext_Translate_Adapter_Typo3 extends Zend_Translate_Adapter
             }
         }
         
-        return Zfext_Plugin::getInstance()->pi_getLL($messageId, $alt);
+        return Zfext_Plugin::getInstance()->pi_getLL($messageId, $alt == null ? $messageId : $alt);
     }
     
     /**

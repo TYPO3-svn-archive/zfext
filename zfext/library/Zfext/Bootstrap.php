@@ -37,44 +37,33 @@ class Zfext_Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 	protected static $_firstRun = true;
 	
 	/**
-	 * Sticks request, response and dispatcher together
+	 * Sticks request, response and dispatcher together. We need to override
+	 * the default frontcontroller-resource with this class resource because
+	 * otherwise it may happen that controller/dispatcher/router are not set
+	 * correctly when this class is extended to get a custom bootstrap.
+	 * 
+	 * @return Zend_Controller_Front
 	 */
-	protected function _initZfextFrontcontroller()
-	{		
-	    if (!self::$_firstRun) {
-	    	Zend_Controller_Front::getInstance()->resetInstance();
+	protected function _initFrontcontroller()
+	{
+		$front = Zend_Controller_Front::getInstance();
+	    
+		if (!self::$_firstRun) {
+	    	$front->resetInstance();
+			Zend_Layout::resetMvcInstance();
 	    }else{
 	    	self::$_firstRun = false;
 	    }
-		Zend_Controller_Front::getInstance()
+		
+	    $front
 		->setResponse(new Zfext_Controller_Response_Plugin())
-		->setDispatcher(new Zfext_Controller_Dispatcher_Plugin());
-	}
-	
-	/**
-	 * Just reset the layout for every discrete frontend-plugin
-	 */
-	protected function _initZfextLayout()
-	{
-		Zend_Layout::resetMvcInstance();
-	}
-	
-	/**
-	 * Sets the router for TYPO3
-	 */
-	protected function _initRouter()
-	{
-		Zend_Controller_Front::getInstance()
+		->setDispatcher(new Zfext_Controller_Dispatcher_Plugin())
 		->setRouter(new Zfext_Controller_Router_Typo3());
-	}
-	
-	/**
-	 * Override default action helper while its not using router in
-	 * its simple/direct method
-	 */
-	protected function _initZfextActionHelper() 
-	{
+		
 		Zend_Controller_Action_HelperBroker::removeHelper('url');
 		Zend_Controller_Action_HelperBroker::addHelper(new Zfext_Controller_Action_Helper_Url());
+		
+		$resource = $this->getPluginResource('frontcontroller');
+		return $resource->init();
 	}
 }

@@ -376,7 +376,19 @@ class Zfext_ExtMgm
 		$options = (array) $GLOBALS['TSFE']->tmpl->setup['plugin.'][$prefixId.'.']['zfext.'];
 		
 		if (empty($options['signature'])) {
-	    	throw new Zfext_Exception($prefixId.' is not a ZfExt-plugin!');
+			if (Zend_Controller_Front::getInstance()->getDispatcher()->isValidModule($prefixId)) {
+				// Seems like prefixId is an module for current plugin so we
+				// clone the options of this to the queried prefixId
+				// @see http://forge.typo3.org/issues/9650
+				// @see self::addPlugin()
+				$currentPrefixId = Zfext_Plugin::getInstance()->prefixId;
+				$options = self::getPluginOptions($currentPrefixId);
+				$options['signature'] = $options['extKey'].'.'.$prefixId;
+				self::$_pluginOptions[$prefixId] = $options;
+				return;
+			} else {
+	    		throw new Zfext_Exception($prefixId.' is not a ZfExt-plugin!');
+			}
 	    }
 		
 	    $parts = explode('.', $options['signature']);
