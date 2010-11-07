@@ -52,6 +52,14 @@ class Zfext_Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 	}
 	
 	/**
+	 * Just reset the layout for every discrete frontend-plugin
+	 */
+	protected function _initZfextLayout()
+	{
+		Zend_Layout::resetMvcInstance();
+	}
+	
+	/**
 	 * Sets the router for TYPO3
 	 */
 	protected function _initRouter()
