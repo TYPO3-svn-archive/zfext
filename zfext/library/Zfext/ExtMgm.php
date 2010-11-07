@@ -52,7 +52,8 @@ class Zfext_ExtMgm
 		'suffix' => '',
 		'type' => 'list_type',
 		'cached' => false,
-		'controllerDirectory' => 'controllers'
+		'controllerDirectory' => 'controllers',
+		'modules' => ''
 	);
 	
 	/**
@@ -225,11 +226,27 @@ class Zfext_ExtMgm
 		
 		$setup = "plugin.{$prefixId} {\n";
 		
-		//Add controller directory
-		$setup .= 'zfext.resources.frontcontroller.controllerdirectory.'.
-		$prefixId .' = EXT:'.$extKey.'/'.
-		trim($options['directory'],"/\\").'/'.
-		trim($options['controllerDirectory'],"/\\")."\n";
+		// Controller Directory Setup
+		// @see http://forge.typo3.org/issues/9650
+		$setup .= "zfext.resources.frontcontroller.controllerdirectory {\n";
+		$dir = trim(str_replace('\\', '/', $options['directory']), "/");
+		$cDir = trim(str_replace('\\', '/', $options['controllerDirectory']), "/");
+		$modules = array($prefixId => $dir.'/'.$cDir);
+		
+		if (is_string($options['modules']) && strlen($options['modules'])) {
+			// Generate setup for modules:
+			$cn = t3lib_extMgm::getCN($extKey);
+			$mDir = substr($dir, 0, strrpos($dir, '/'));
+			$rawModules = explode(',', $options['modules']);
+			foreach ($rawModules as $module) {
+				$modules[$cn.'_'.trim($module, ' _')] = $mDir.'/'.$module.'/'.$cDir;
+			}
+		}
+		foreach ($modules as $module => $directory) {
+			$setup .= $module.' = EXT:'.$extKey.'/'.$directory."\n";
+		}
+		$setup .= "}\n";
+		// End of Controller Directory Setup
 		
 		if (count($pluginOptions)) {
 			foreach ($pluginOptions as $key => $value)

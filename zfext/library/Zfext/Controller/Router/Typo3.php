@@ -87,6 +87,10 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
 	    
 	    foreach ($params as $param => $value)
 	    {
+	    	if ($param == $request->getModuleKey())
+	    	{
+	    		$request->setModuleName($value);
+	    	}
 	        if ($param == $request->getControllerKey())
 	        {
 	            $request->setControllerName($value);
