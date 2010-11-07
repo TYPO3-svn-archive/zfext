@@ -183,20 +183,16 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
         //Filter the params:
         foreach ($userParams as $param => $value)
         {
-        	if (preg_match(self::GLOBALS_PATTERN, $param, $matches))
-        	{
+        	if (preg_match(self::GLOBALS_PATTERN, $param, $matches)) {
         	    $globalParams[$matches[1]] = $value;
         	}
-        	elseif (preg_match(self::LOCALS_PATTERN, $param, $matches))
-        	{
+        	elseif (preg_match(self::LOCALS_PATTERN, $param, $matches)) {
         	    $localParams[$matches[1]] = $value;
         	}
-        	elseif ($route == 'global')
-        	{
+        	elseif ($route == 'global') {
         	    $globalParams[$param] = $value;
         	}
-        	elseif ($route == 'local')
-        	{
+        	elseif ($route == 'local') {
         	    $localParams[$param] = $value;
         	}
         }
@@ -223,6 +219,20 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
             }
         }
         unset($localParams['DATA']);
+        
+        $front = Zend_Controller_Front::getInstance();
+        $request = $front->getRequest();
+        
+        // Filter out unnecessary keys:
+        foreach ($localParams as $param => $value) {
+        	if (
+        		($param == $request->getModuleKey() && $value == $front->getDefaultModule()) ||
+        		($param == $request->getControllerKey() && $value == $front->getDefaultControllerName()) ||
+        		($param == $request->getActionKey() && $value == $front->getDefaultAction())
+        	) {
+	    		unset($localParams[$param]);
+	    	}
+        }
         
         $globalParams[$prefixId] = $localParams;
         
