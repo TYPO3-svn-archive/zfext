@@ -384,6 +384,7 @@ class Zfext_ExtMgm
 				$currentPrefixId = Zfext_Plugin::getInstance()->prefixId;
 				$options = self::getPluginOptions($currentPrefixId);
 				$options['signature'] = $options['extKey'].'.'.$prefixId;
+				unset($options['namespace']);
 				self::$_pluginOptions[$prefixId] = $options;
 				return;
 			} else {
