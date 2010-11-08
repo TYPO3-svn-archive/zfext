@@ -70,8 +70,7 @@ class Zend_View_Helper_CObject extends Zend_View_Helper_Abstract
 		if (is_array($mySetup)) {
 			$setup = t3lib_div::array_merge_recursive_overrule($setup, $mySetup);
 		}
-		Zend_Debug::dump($typoscriptObject);
-		Zend_Debug::dump($setup);
+		
 		return Zfext_Plugin::getInstance()->cObj->cObjGetSingle($typoscriptObject, $setup);
 	}
 }
