@@ -40,11 +40,16 @@
 class Zend_View_Helper_Image extends Zend_View_Helper_Abstract
 {
 	/**
-	 * Returns the relative path to an image
+	 * @var array Image info that comes from TYPO3
+	 */
+	protected $_imageInfo;
+	
+	/**
+	 * Calls $cObj->getImgResource and stores image info
 	 * 
 	 * @param string $src
 	 * @param array $conf
-	 * @return string
+	 * @return Zend_View_Helper_Image
 	 */
 	public function image($src, $conf = array())
 	{
@@ -58,6 +63,48 @@ class Zend_View_Helper_Image extends Zend_View_Helper_Abstract
 		$imageInfo[3] = t3lib_div::png_to_gif_by_imagemagick($imageInfo[3]);
 		$GLOBALS['TSFE']->imagesOnPage[] = $imageInfo[3];
 
-		return $GLOBALS['TSFE']->absRefPrefix . t3lib_div::rawUrlEncodeFP($imageInfo[3]);
+		$imageInfo[3] = $GLOBALS['TSFE']->absRefPrefix . t3lib_div::rawUrlEncodeFP($imageInfo[3]);
+		
+		$this->_imageInfo = $imageInfo;
+		
+		return $this;
+    }
+    
+    /**
+     * Access the properties of the current image
+     * 
+     * @param string $var
+     * @return int|string|NULL
+     */
+    public function __get($var)
+    {
+    	switch ($var) {
+    		case 'width':
+    			return $this->_imageInfo[0];
+    		case 'height':
+    			return $this->_imageInfo[1];
+    		case 'ext':
+    		case 'type':
+    		case 'extension':
+    			return $this->_imageInfo[2];
+    		case 'src':
+    		case 'source':
+    			return $this->_imageInfo[3];
+    		default:
+    			if (array_key_exists($var, $this->_imageInfo)) {
+    				return $this->_imageInfo[$var];
+    			}
+    			return null;
+    	}
+    }
+    
+    /**
+     * Output image source
+     * 
+     * @return string
+     */
+    public function __toString()
+    {
+    	return $this->_imageInfo[3];
     }
 }

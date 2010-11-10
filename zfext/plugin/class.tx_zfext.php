@@ -69,7 +69,7 @@ class tx_zfext extends tslib_pibase
 	{
 		$this->setConf($conf);
 		
-		set_error_handler(array($this, 'errorHandler'), E_ALL ^ E_NOTICE);
+		set_error_handler(array($this, 'errorHandler'), E_ALL ^ E_NOTICE ^ E_WARNING);
 		
 		if (class_exists('Zend_Controller_Front', false)) {
 			Zend_Controller_Front::getInstance()->getResponse()->clearBody();
