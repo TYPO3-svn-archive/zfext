@@ -4,9 +4,10 @@ plugin.tx_zfext.includePaths.zfLibrary =
 plugin.tx_zfext.zfext {
 	bootstrap.path = EXT:zfext/library/Zfext/Bootstrap.php
 	bootstrap.class = Zfext_Bootstrap
+	pluginpaths.Zfext_Application_Resource = EXT:zfext/library/Zfext/Application/Resource
+	resources.errorhandler.enable = 1
 	resources.frontcontroller.plugins.pluginAutoloader = Zfext_Controller_Plugin_Autoloader
 	resources.frontcontroller.plugins.pluginHeadHelpers = Zfext_Controller_Plugin_HeadHelpers
-	resources.frontcontroller.defaultmodule = tx_zfext
 	resources.db.adapter = TYPO3
 	resources.translate.adapter = Zfext_Translate_Adapter_Typo3
 	resources.translate.data = simple

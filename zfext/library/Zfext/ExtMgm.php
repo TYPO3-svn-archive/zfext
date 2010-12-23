@@ -53,7 +53,7 @@ class Zfext_ExtMgm
 		'type' => 'list_type',
 		'cached' => false,
 		'controllerDirectory' => 'controllers',
-		'modules' => ''
+		'modules' => false
 	);
 	
 	/**
@@ -213,7 +213,7 @@ class Zfext_ExtMgm
 		
 		self::_addPiToSt43(
 			$extKey,
-			trim($options['directory'],"\\/").'/class.'.$prefixId.'.php',
+			'',
 			$options['suffix'],
 			$options['type'],
 			$options['cached']
@@ -224,34 +224,25 @@ class Zfext_ExtMgm
 			self::$_defaultPluginOptions
 		);
 		
-		$setup = "plugin.{$prefixId} {\n";
+		$setup = "plugin.{$prefixId}.zfext {\n";
 		
-		// Controller Directory Setup
-		// @see http://forge.typo3.org/issues/9650
-		$setup .= "zfext.resources.frontcontroller.controllerdirectory {\n";
 		$dir = trim(str_replace('\\', '/', $options['directory']), "/");
-		$cDir = trim(str_replace('\\', '/', $options['controllerDirectory']), "/");
-		$modules = array($prefixId => $dir.'/'.$cDir);
+		$setup .= 'resources.frontcontroller.';
+		if ($options['modules']) {
+			$setup .= 'moduledirectory = EXT:'.$extKey.'/'.$dir;
+		}else{
+			$cDir = trim(str_replace('\\', '/', $options['controllerDirectory']), "/");
+			$setup .= 'controllerdirectory = EXT:'.$extKey.'/'.$dir.'/'.$cDir;
+		}
 		
-		if (is_string($options['modules']) && strlen($options['modules'])) {
-			// Generate setup for modules:
-			$cn = t3lib_extMgm::getCN($extKey);
-			$mDir = substr($dir, 0, strrpos($dir, '/'));
-			$rawModules = explode(',', $options['modules']);
-			foreach ($rawModules as $module) {
-				$modules[$cn.'_'.trim($module, ' _')] = $mDir.'/'.$module.'/'.$cDir;
-			}
+		if (!empty($options['defaultModule'])) {
+			$setup .= "\nresources.frontcontroller.defaultmodule = ".$options['defaultModule'];
 		}
-		foreach ($modules as $module => $directory) {
-			$setup .= $module.' = EXT:'.$extKey.'/'.$directory."\n";
-		}
-		$setup .= "}\n";
-		// End of Controller Directory Setup
 		
 		if (count($pluginOptions)) {
 			foreach ($pluginOptions as $key => $value)
 			{
-				$setup .= $key.' = '.($value === false ? 0 : strval($value))."\n";
+				$setup .= "\n".$key.' = '.($value === false ? 0 : strval($value));
 			}
 		}
 		$setup .= "\n}";
@@ -376,20 +367,7 @@ class Zfext_ExtMgm
 		$options = (array) $GLOBALS['TSFE']->tmpl->setup['plugin.'][$prefixId.'.']['zfext.'];
 		
 		if (empty($options['signature'])) {
-			if (Zend_Controller_Front::getInstance()->getDispatcher()->isValidModule($prefixId)) {
-				// Seems like prefixId is an module for current plugin so we
-				// clone the options of this to the queried prefixId
-				// @see http://forge.typo3.org/issues/9650
-				// @see self::addPlugin()
-				$currentPrefixId = Zfext_Plugin::getInstance()->prefixId;
-				$options = self::getPluginOptions($currentPrefixId);
-				$options['signature'] = $options['extKey'].'.'.$prefixId;
-				unset($options['namespace']);
-				self::$_pluginOptions[$prefixId] = $options;
-				return;
-			} else {
-	    		throw new Zfext_Exception($prefixId.' is not a ZfExt-plugin!');
-			}
+			throw new Zfext_Exception($prefixId.' is not a ZfExt-plugin!');
 	    }
 		
 	    $parts = explode('.', $options['signature']);
@@ -397,7 +375,7 @@ class Zfext_ExtMgm
 	    
 		foreach (self::$_defaultPluginOptions as $key => $val)
 		{
-		    if (!empty($val) && empty($options[$key])) {
+		    if (!empty($val) && !isset($options[$key])) {
 		        $options[$key] = $val;
 		    }
 		}

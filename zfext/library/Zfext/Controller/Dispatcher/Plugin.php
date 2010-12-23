@@ -50,7 +50,13 @@ class Zfext_Controller_Dispatcher_Plugin extends Zend_Controller_Dispatcher_Stan
 	 */
 	public function formatClassName($moduleName, $className)
 	{
-		return Zfext_ExtMgm::getPluginNamespace(strtolower($moduleName)).'_'.$className;
+		if ($moduleName == 'zfext') {
+			return 'Tx_Zfext_'.$className;
+		}
+		$formatedClass = Zfext_ExtMgm::getPluginNamespace(Zfext_Plugin::getInstance()->prefixId);
+		$formatedClass .= '_'.$this->formatModuleName($moduleName);
+		$formatedClass .= '_'.$className;
+		return $formatedClass;
 	}
 	
 	/* (non-PHPdoc)

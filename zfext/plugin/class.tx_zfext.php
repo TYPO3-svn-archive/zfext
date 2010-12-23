@@ -94,13 +94,48 @@ class tx_zfext extends tslib_pibase
 		);
 	}
 	
+	/**
+	 * Set config and merge with referenced conf if so
+	 * 
+	 * @param array $conf
+	 */
 	protected function setConf($conf)
 	{
 		if ($conf['zfext'] == '< plugin.tx_zfext.zfext') {
+			// Actually same as in elseif but faster
 			$conf['zfext.'] = t3lib_div::array_merge_recursive_overrule(
 				$GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_zfext.']['zfext.'], $conf['zfext.']);
 		}
+		elseif ($conf['zfext'] && strpos($conf['zfext'], '<') === 0) {
+			$conf['zfext.'] = $this->parseReferencedTS($conf['zfext'], $conf['zfext.']);
+		}
 		$this->conf = $conf;
+	}
+	
+	protected function parseReferencedTS($ref, $conf)
+	{
+		$parts = explode('.', trim($ref, "\t <"));
+		
+		if (count($parts)) {
+			$first = array_shift($parts);
+			if (is_array($GLOBALS['TSFE']->tmpl->setup[$first.'.'])) {
+				$refConf = $GLOBALS['TSFE']->tmpl->setup[$first.'.'];
+				foreach ($parts as $part) {
+					if ($refConf[$part] && strpos($refConf[$part], '<') === 0) {
+						$refConf = $this->parseReferencedTS($refConf[$part], (array) $refConf[$part.'.']);
+					}elseif (is_array($refConf[$part.'.'])) {
+						$refConf = $refConf[$part.'.'];
+					}else{
+						$refConf = null;
+						break;
+					}
+				}
+			}
+		}
+		if (is_array($refConf)) {
+			$conf = t3lib_div::array_merge_recursive_overrule($refConf, $conf);
+		}
+		return $conf;
 	}
 	
 	/**

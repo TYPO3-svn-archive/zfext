@@ -36,40 +36,42 @@
  */
 class Zfext_Controller_Plugin_Autoloader extends Zend_Controller_Plugin_Abstract
 {
-	/**
-	 * @var array The module names that are already registered
-	 */
-	protected $_registeredModules = array();
+	protected static $_registeredNamespaces = array(); 
 	
 	/* (non-PHPdoc)
 	 * @see Controller/Plugin/Zend_Controller_Plugin_Abstract#routeShutdown()
 	 */
 	public function routeShutdown(Zend_Controller_Request_Abstract $request)
 	{
-		$directorys = (array) Zend_Controller_Front::getInstance()
-			->getDispatcher()
-			->getControllerDirectory();
-			
+		$prefixId = Zfext_Plugin::getInstance()->prefixId;
+		if (!Zfext_ExtMgm::getPluginOption($prefixId, 'autoloader')) {
+			return;
+		}
+		
+		$dispatcher = Zend_Controller_Front::getInstance()->getDispatcher();
+		$directorys = (array) $dispatcher->getControllerDirectory();
+		
 		foreach ($directorys as $module => $dir)
 		{
-			if (!Zfext_ExtMgm::getPluginOption($module, 'autoloader')
-				|| in_array($module, $this->_registeredModules))
-			{
+			if ($module == 'zfext') {
 				continue;
 			}
 			
-			$dir =
+			$namespace = trim($dispatcher->formatClassName($module, ''), '_');
+			if (in_array($namespace, self::$_registeredNamespaces)) {
+				continue;
+			}
 			
 			$dir = str_replace(array("\\",'/'), DIRECTORY_SEPARATOR, $dir);
 			$parts = explode(DIRECTORY_SEPARATOR, $dir);
 			array_pop($parts);
 			
 			new Zfext_Application_Module_Autoloader(array(
-				'namespace' => Zfext_ExtMgm::getPluginNamespace($module),
+				'namespace' => $namespace,
 				'basePath' => implode(DIRECTORY_SEPARATOR, $parts)
 			));
 			
-			$this->_registeredModules[] = $module;
+			self::$_registeredNamespaces[] = $module;
 		}
 	}
 }

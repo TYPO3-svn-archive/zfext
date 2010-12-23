@@ -61,24 +61,36 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
 	    $front = Zend_Controller_Front::getInstance();
 	    $dispatcher = $front->getDispatcher();
 	    
-	    if (!$dispatcher->isValidModule($this->_plugin->prefixId))
-	    {
-	        throw new Zend_Controller_Router_Exception('Namespace for '.$this->_plugin->prefixId.' not found', 404);
-	        return;
-	    }
-	    
-	    $request->setModuleName($this->_plugin->prefixId);
-	    
 	    $options = array_merge(
 	        array(
+	        	'defaultModule' => $dispatcher->getDefaultModule(),
 	            'defaultController' => $dispatcher->getDefaultControllerName(),
 	            'defaultAction' => $dispatcher->getDefaultAction()
 	        ),
 	        Zfext_ExtMgm::getPluginOptions($this->_plugin->prefixId)
 	    );
 	    
+	    // Detect if a startup-route was set in BE
+	    if (strlen($this->_plugin->cObj->getFieldVal('select_key'))) {
+	    	$parts = explode('/', $this->_plugin->cObj->getFieldVal('select_key'), 3);
+	    	$action = array_pop($parts);
+	    	if (empty($this->_plugin->piVars[$request->getModuleKey()]) &&
+	    		empty($this->_plugin->piVars[$request->getControllerKey()])) {
+	    		$options['defaultAction'] = $action;
+	    	}
+	    	if (empty($this->_plugin->piVars[$request->getModuleKey()])) {
+		    	if (count($parts)) {
+		    		$options['defaultController'] = array_pop($parts);
+		    	}
+		    	if (count($parts)) {
+		    		$options['defaultModule'] = array_pop($parts);
+		    	}
+	    	}
+	    }
+	    
 	    $params = array_merge(
 	        array (
+    	        $request->getModuleKey() => $options['defaultModule'],
     	        $request->getControllerKey() => $options['defaultController'],
     	        $request->getActionKey() => $options['defaultAction']
 	        ),
