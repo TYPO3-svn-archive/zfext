@@ -84,6 +84,7 @@ class Zfext_Application_Resource_Errorhandler extends Zend_Application_Resource_
     			t3lib_extMgm::extPath('zfext', 'plugin/controllers'),
     			$moduleName
     		);
+    		$options['module'] = $moduleName;
     	}    	
     	
     	$handler = new $class($options);
