@@ -88,6 +88,12 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
 	    	}
 	    }
 	    
+	    // This could be done better but for now it's ok
+	    // set the determined m/c/a options back to frontcontroller
+	    $front->setDefaultModule($options['defaultModule']);
+	    $front->setDefaultControllerName($options['defaultController']);
+	    $front->setDefaultAction($options['defaultAction']);
+	    
 	    $params = array_merge(
 	        array (
     	        $request->getModuleKey() => $options['defaultModule'],
