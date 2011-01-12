@@ -48,9 +48,9 @@ class tx_zfext extends tslib_pibase
 	public $conf = array();
 	
 	/**
-	 * @var Zend_Application
+	 * @var array Respones are held here on plugin level and retrieved when a special response segment is required
 	 */
-	protected static $_application;
+	protected static $_responseRegister = array();
 	
 	/**
 	 * We override the constructor and call it later from setup 
@@ -67,20 +67,33 @@ class tx_zfext extends tslib_pibase
 	 */
 	public function main($content, $conf)
 	{
+		$this->setupPlugin($conf);
+		
+		$responseSegment = 'default';
+		if (!empty($conf['zfext.']['responseSegment'])) {
+			$responseSegment = $conf['zfext.']['responseSegment'];
+			if (strtolower($responseSegment) == 'false') {
+				$responseSegment = false;
+			}
+			if (isset(self::$_responseRegister[$this->prefixId])) {
+				$layout = Zend_Layout::getMvcInstance();
+				if ($layout->isEnabled()) {
+					return $this->pi_wrapInBaseClass($layout->$responseSegment);
+				}else{
+					return $this->pi_wrapInBaseClass(self::$_responseRegister[$this->prefixId]->getBody($responseSegment));
+				}
+			}
+		}
+		
 		$this->setConf($conf);
 		
 		set_error_handler(array($this, 'errorHandler'), E_ALL ^ E_NOTICE ^ E_WARNING);
 		
-		if (class_exists('Zend_Controller_Front', false)) {
-			Zend_Controller_Front::getInstance()->getResponse()->clearBody();
-		}
-		
 		Zfext_ExtMgm::loadLibrary('zfext');
 		
-		$this->setupPlugin();
-		
 		Zfext_ExtMgm::loadLibrary($this->extKey);
-		
+	    Zfext_Plugin::setInstance($this);
+				
 		$application = new Zend_Application(
 			t3lib_extMgm::extPath($this->extKey).'pi1',
 			$this->extractOptions($this->conf['zfext.'])
@@ -89,9 +102,41 @@ class tx_zfext extends tslib_pibase
 		
 		restore_error_handler();
 		
-		return $this->pi_wrapInBaseClass(
-			Zend_Controller_Front::getInstance()->getResponse()->getBody()
-		);
+		$response = Zend_Controller_Front::getInstance()->getResponse();
+		self::$_responseRegister[$this->prefixId] = $response;
+		
+		return $this->pi_wrapInBaseClass($response->getBody($responseSegment));
+	}
+	
+	/**
+	 * Detects the prefixId, extKey and $scriptRelPath (latter only points to
+	 * the plugin directory in the hope that nobody needs the script itself)
+	 * 
+	 * Detects if this is a USER_INT or USER plugin (sets checkCHash accordingly)
+	 *  
+	 * Calls parent constructor and sets default piVars. (LoadLL is not yet
+	 * done here but propably later in the translator adapter)
+	 * 
+	 * @param unknown_type $conf
+	 */
+	protected function setupPlugin($conf)
+	{
+	    $signature = explode('.', $conf['zfext.']['signature']);
+	    $this->extKey = $signature[0];
+	    $this->prefixId = $signature[1];
+	    
+	    $controllerPath = t3lib_div::getFileAbsFileName(
+	    	$conf['zfext.']['resources.']['frontcontroller.']['controllerdirectory.'][$this->prefixId]);
+		$extPath = realpath(t3lib_extMgm::extPath($this->extKey));
+		$this->scriptRelPath = substr($controllerPath, strlen($extPath) + 1);
+	    
+	    $type = $GLOBALS['TSFE']->tmpl->setup['plugin.'][$this->prefixId];
+		
+		$this->pi_USER_INT_obj = ($type == 'USER_INT');
+		$this->pi_checkCHash = ($type == 'USER');
+		
+		parent::tslib_pibase();
+		parent::pi_setPiVarDefaults();
 	}
 	
 	/**
@@ -186,42 +231,6 @@ class tx_zfext extends tslib_pibase
 		}
 
 		throw new ErrorException($type.': '.$errstr, 0, $errno, $errfile, $errline);
-	}
-	
-	/**
-	 * Detects the prefixId, extKey and $scriptRelPath (latter only points to
-	 * the plugin directory in the hope that nobody needs the script itself)
-	 * 
-	 * Detects if this is a USER_INT or USER plugin (sets checkCHash accordingly)
-	 *  
-	 * Calls parent constructor and sets default piVars. (LoadLL is not yet
-	 * done here but propably later in the translator adapter)
-	 * 
-	 * Registers its instance to Zfext_Plugin which later will be used by the 
-	 * Zfext_Controller_Router_Typo3 that will set the moduleName to the prefixId
-	 * 
-	 * @param unknown_type $conf
-	 */
-	protected function setupPlugin()
-	{
-	    $signature = explode('.', $this->conf['zfext.']['signature']);
-	    $this->extKey = $signature[0];
-	    $this->prefixId = $signature[1];
-	    
-	    $controllerPath = t3lib_div::getFileAbsFileName(
-	    	$this->conf['zfext.']['resources.']['frontcontroller.']['controllerdirectory.'][$this->prefixId]);
-		$extPath = realpath(t3lib_extMgm::extPath($this->extKey));
-		$this->scriptRelPath = substr($controllerPath, strlen($extPath) + 1);
-	    
-	    $type = $GLOBALS['TSFE']->tmpl->setup['plugin.'][$this->prefixId];
-		
-		$this->pi_USER_INT_obj = ($type == 'USER_INT');
-		$this->pi_checkCHash = ($type == 'USER');
-		
-		parent::tslib_pibase();
-		parent::pi_setPiVarDefaults();
-		
-	    Zfext_Plugin::setInstance($this);
 	}
 	
 	/**
