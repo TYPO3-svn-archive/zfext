@@ -61,11 +61,13 @@ class Zfext_ExtMgm
 	 */
 	protected static $_defaultPluginOptions = array
 	(
+		'defaultModule' => null,
 		'defaultController' => null,
 		'defaultAction' => null,
 	    'namespace' => null, //Can be overriden
 		'suffixInClassName' => true,
-		'autoloader' => true
+		'autoloader' => true,
+		'prefixDefaultModule' => false
 	);
 	
 	protected static $_ignoreNamespaces = array('Zend','ZendX');
@@ -237,6 +239,10 @@ class Zfext_ExtMgm
 		
 		if (!empty($options['defaultModule'])) {
 			$setup .= "\nresources.frontcontroller.defaultmodule = ".$options['defaultModule'];
+		}
+		
+		if (!empty($options['prefixDefaultModule'])) {
+			$setup .= "\nresources.frontcontroller.params.prefixDefaultModule = ".$options['prefixDefaultModule'];
 		}
 		
 		if (count($pluginOptions)) {
