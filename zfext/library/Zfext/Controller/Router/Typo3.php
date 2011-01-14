@@ -78,14 +78,14 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
 	    		empty($this->_plugin->piVars[$request->getControllerKey()])) {
 	    		$options['defaultAction'] = $action;
 	    	}
-	    	if (empty($this->_plugin->piVars[$request->getModuleKey()])) {
+	    	//if (empty($this->_plugin->piVars[$request->getModuleKey()])) {
 		    	if (count($parts)) {
 		    		$options['defaultController'] = array_pop($parts);
 		    	}
 		    	if (count($parts)) {
 		    		$options['defaultModule'] = array_pop($parts);
 		    	}
-	    	}
+	    	//}
 	    }
 	    
 	    // This could be done better but for now it's ok
