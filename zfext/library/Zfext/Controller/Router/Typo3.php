@@ -175,7 +175,7 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
             return $this->_plugin->pi_linkTP_keepPIvars_url();
         }
         
-        $route = (is_string($name) && strlen($name) && $route != 'default') ? strtolower($name) : $this->_defaultRoute;
+        $route = (is_string($name) && strlen($name) && $name != 'default') ? strtolower($name) : $this->_defaultRoute;
         
         $prefixId = $this->_plugin->prefixId;
         
