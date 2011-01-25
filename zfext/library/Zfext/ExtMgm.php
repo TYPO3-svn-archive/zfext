@@ -88,66 +88,43 @@ class Zfext_ExtMgm
 	public static function addLibrary($extKey, $directory = null, $autoload = true)
 	{
 	    $libraryPath = 'EXT:'.$extKey;
-	    //$libraryKey = t3lib_extMgm::getCN($extKey);
-	    $libraryKey = $extKey;
-	    if ($directory != null && is_string($directory))
-	    {
+	    
+	    if ($directory != null && is_string($directory)) {
 	        $directory = trim(str_replace("\\",'/',$directory), '/');
-	        //$libraryKey .= '_'.str_replace('/','_',$directory);
 	        $libraryPath .= '/'.$directory;
 	    }
 	    
-	    $setup = self::TS_PATH.'.includePaths.'.$libraryKey.' = '.$libraryPath;
-	    if ($autoload)
-	    {
+	    if ($autoload) {
 	    	try {
 	            $iterator = new DirectoryIterator(t3lib_extMgm::extPath($extKey).$directory);
-	        }catch(Exception $e)
-	        {
+	        }catch(Exception $e) {
 	            return;
 	        }
-	        $namespaces = array();
-	        foreach ($iterator as $item)
-	        {
-	            if ($item->isDir())
-	            {
+	        $namespaces = (array) $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['zfext']['autoloadNamespaces'];
+	        foreach ($iterator as $item) {
+	            if ($item->isDir()) {
 	                $first = substr($item->getFilename(),0,1);
 	                if (preg_match('/[A-Z]/',$first) && 
-	                    !in_array($item->getFilename(), self::$_ignoreNamespaces))
-	                {
+	                    !in_array($item->getFilename(), self::$_ignoreNamespaces)) {
 	                    $namespaces[] = $item->getFilename();
 	                }
 	            }
 	        }
-	        if (count($namespaces))
-	        {
-	            $setup .= "\n".self::TS_PATH.'.autoloadNamespaces '.
-	                      ':= addToList('.implode(',',$namespaces).')';
-	        }
+	        $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['zfext']['autoloadNamespaces'] = $namespaces;
 	    }
-	    t3lib_extMgm::addTypoScriptSetup($setup);
+	    
+	    $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['zfext']['includePaths'][$extKey] = $libraryPath;
 	}
 	
 	/**
 	 * Add a library to the include path and init autoload for it if required -
-	 * loads Zend Framework when configured in plugin.tx_zfext.includePaths.zfLibrary
+	 * loads Zend Framework when configured added with Zfext_ExtMgm::addLibrary
 	 * 
 	 * @param string $extKey
 	 */
 	public static function loadLibrary($extKey)
 	{
-		if ($GLOBALS['TSFE']->tmpl->setup == null) {
-			// TYPO3 is in an early state and no template is
-			// fetched yet - have to do that here because we
-			// need the paths from the setup
-			$GLOBALS['TSFE']->initTemplate();
-			$GLOBALS['TSFE']->checkAlternativeIdMethods();
-			$GLOBALS['TSFE']->determineId();
-			$GLOBALS['TSFE']->getPageAndRootline();
-			$GLOBALS['TSFE']->getConfigArray();
-		}
-		
-		$paths = $GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_zfext.']['includePaths.'];
+		$paths = (array) $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['zfext']['includePaths'];
 		$loadPaths = array();
 		
 		if (!self::$_zfLoaded) {
@@ -166,15 +143,35 @@ class Zfext_ExtMgm
 		}
 		
 		if (!self::$_zfLoaded) {
-			$nsList = $GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_zfext.']['autoloadNamespaces'];
-        	if (strlen(trim($nsList,','))) {
+			$nsList = (array) $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['zfext']['autoloadNamespaces'];
+        	if (count($nsList)) {
         		require_once 'Zend/Loader/Autoloader.php';
-		        $namespaces = array_unique(explode(',',$nsList));
+		        $namespaces = array_unique($nsList);
 		        Zend_Loader_Autoloader::getInstance()->registerNamespace($namespaces);
         	}
 		}
 		
 		self::$_zfLoaded = true;
+	}
+	
+	/**
+	 * Adds an cliKey to $TYPO3_CONF_VARS and registers the manifest(s)
+	 * 
+	 * @param string $extKey Extension key (required to load libraries for this cliKey)
+	 * @param string $cliKey CLI-Key
+	 * @param string|array $manifest Manifest classname or array of manifest classnames
+	 * @param string $user The _cli_*-BE-user required for this cliKey
+	 */
+	public static function addToolManifest($extKey, $cliKey, $manifest, $user)
+	{
+	    $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['cliKeys'][$cliKey] = array(
+			'EXT:zfext/cli/dispatch.php',
+			$user
+		);
+		$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['zfext']['toolManifests'][$cliKey] = array(
+		    'extKey' => $extKey,
+		    'manifest' => $manifest
+		);
 	}
 	
 	/**
