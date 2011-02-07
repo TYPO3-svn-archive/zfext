@@ -37,5 +37,7 @@ $options = array(
     'classesToLoad' => $toolConf[TYPO3_cliKey]['manifest']
 );
 
+chdir(PATH_site);
+
 $client = new Zend_Tool_Framework_Client_Console($options);
 $client->dispatch();
