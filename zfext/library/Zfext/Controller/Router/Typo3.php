@@ -70,22 +70,28 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
 	        Zfext_ExtMgm::getPluginOptions($this->_plugin->prefixId)
 	    );
 	    
+	    $piVars = (array) $this->_plugin->piVars;
+	    
+	    $mKey = $request->getModuleKey();
+	    $cKey = $request->getControllerKey();
+	    $aKey = $request->getActionKey();
+	    
 	    // Detect if a startup-route was set in BE
 	    if (strlen($this->_plugin->cObj->getFieldVal('select_key'))) {
 	    	$parts = explode('/', $this->_plugin->cObj->getFieldVal('select_key'), 3);
 	    	$action = array_pop($parts);
-	    	if (empty($this->_plugin->piVars[$request->getModuleKey()]) &&
-	    		empty($this->_plugin->piVars[$request->getControllerKey()])) {
+	    	$controller = array_pop($parts);
+	    	$module = array_pop($parts);
+	    	
+	    	if ((empty($piVars[$mKey]) || $piVars[$mKey] == $module) &&
+	    	    (empty($piVars[$cKey]) || $piVars[$cKey] == $controller)) {
 	    		$options['defaultAction'] = $action;
 	    	}
-	    	//if (empty($this->_plugin->piVars[$request->getModuleKey()])) {
-		    	if (count($parts)) {
-		    		$options['defaultController'] = array_pop($parts);
-		    	}
-		    	if (count($parts)) {
-		    		$options['defaultModule'] = array_pop($parts);
-		    	}
-	    	//}
+	    	
+	    	if (empty($piVars[$mKey]) || $piVars[$mKey] == $module) {
+		    	$options['defaultController'] = $controller;
+		    	$options['defaultModule'] = $module;
+	    	}
 	    }
 	    
 	    // This could be done better but for now it's ok
@@ -96,11 +102,11 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
 	    
 	    $params = array_merge(
 	        array (
-    	        $request->getModuleKey() => $options['defaultModule'],
-    	        $request->getControllerKey() => $options['defaultController'],
-    	        $request->getActionKey() => $options['defaultAction']
+    	        $mKey => $options['defaultModule'],
+    	        $cKey => $options['defaultController'],
+    	        $aKey => $options['defaultAction']
 	        ),
-	        (array) $this->_plugin->piVars
+	        $piVars
 	    );
 	    
 	    foreach ($params as $param => $value)
