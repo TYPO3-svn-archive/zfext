@@ -75,37 +75,41 @@ class tx_zfext extends tslib_pibase
 			if (strtolower($responseSegment) == 'false') {
 				$responseSegment = false;
 			}
-			if (isset(self::$_responseRegister[$this->prefixId])) {
-				$layout = Zend_Layout::getMvcInstance();
-				if ($layout->isEnabled()) {
-					return $this->pi_wrapInBaseClass($layout->$responseSegment);
-				}else{
-					return $this->pi_wrapInBaseClass(self::$_responseRegister[$this->prefixId]->getBody($responseSegment));
-				}
-			}
 		}
 		
-		$this->setConf($conf);
+		if (isset(self::$_responseRegister[$this->prefixId])) {
+		    $response = self::$_responseRegister[$this->prefixId];
+		}else{
+			$this->setConf($conf);
+			
+			set_error_handler(array($this, 'errorHandler'), E_ALL ^ E_NOTICE ^ E_WARNING);
+			
+			Zfext_ExtMgm::loadLibrary('zfext');
+			
+			Zfext_ExtMgm::loadLibrary($this->extKey);
+		    Zfext_Plugin::setInstance($this);
+					
+			$application = new Zend_Application(
+				t3lib_extMgm::extPath($this->extKey).'pi1',
+				$this->extractOptions($this->conf['zfext.'])
+			);
+			$application->bootstrap()->run();
+			
+			restore_error_handler();
+			
+			$response = Zend_Controller_Front::getInstance()->getResponse();
+			self::$_responseRegister[$this->prefixId] = $response;
+		}
 		
-		set_error_handler(array($this, 'errorHandler'), E_ALL ^ E_NOTICE ^ E_WARNING);
+	    
+		$layout = Zend_Layout::getMvcInstance();
+		if (!in_array($responseSegment, array('default', false)) && $layout->isEnabled()) {
+		    $content = $layout->$responseSegment;
+		}else{
+			$content = $response->getBody($responseSegment);
+		}
 		
-		Zfext_ExtMgm::loadLibrary('zfext');
-		
-		Zfext_ExtMgm::loadLibrary($this->extKey);
-	    Zfext_Plugin::setInstance($this);
-				
-		$application = new Zend_Application(
-			t3lib_extMgm::extPath($this->extKey).'pi1',
-			$this->extractOptions($this->conf['zfext.'])
-		);
-		$application->bootstrap()->run();
-		
-		restore_error_handler();
-		
-		$response = Zend_Controller_Front::getInstance()->getResponse();
-		self::$_responseRegister[$this->prefixId] = $response;
-		
-		return $this->pi_wrapInBaseClass($response->getBody($responseSegment));
+		return $this->pi_wrapInBaseClass($content);
 	}
 	
 	/**
