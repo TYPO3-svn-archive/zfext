@@ -10,5 +10,5 @@ plugin.tx_zfext.zfext {
 	resources.frontcontroller.plugins.pluginHeadHelpers = Zfext_Controller_Plugin_HeadHelpers
 	resources.db.adapter = TYPO3
 	resources.translate.adapter = Zfext_Translate_Adapter_Typo3
-	resources.translate.data = simple
+	resources.translate.data = default
 }

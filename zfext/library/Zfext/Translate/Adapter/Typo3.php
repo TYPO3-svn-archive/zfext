@@ -35,24 +35,13 @@ class Zfext_Translate_Adapter_Typo3 extends Zend_Translate_Adapter
 {
     protected $_loadedPlugins = array();
     
-    /**
-     * Generates the adapter.
-     *
-     * @param  string		      $type    OPTIONAL Can be "simple" or "advanced"
-     * @param  string|Zend_Locale $locale  OPTIONAL Locale/Language to set, identical with Locale
-     *                                     identifiers see Zend_Locale for more information
-     * @param  array              $options OPTIONAL Options for the adaptor
-     * @throws Zend_Translate_Exception
-     * @return void
-     */
-    public function __construct($type = null, $locale = null, array $options = array())
-    {
-        //noop
-    }
+    protected $_dataCharsets = array();
+    
+    protected $_langKeys;
     
     /**
      * Load translation data
-     *
+     * 
      * @param  mixed              $data
      * @param  string|Zend_Locale $locale
      * @param  array              $options (optional)
@@ -60,37 +49,88 @@ class Zfext_Translate_Adapter_Typo3 extends Zend_Translate_Adapter
      */
     protected function _loadTranslationData($data, $locale, array $options = array())
     {
-        //noop
-    }
-    
-    /**
-     * Translates the given string and returns the translation
-     *
-     * @see Zend_Locale
-     * @param  string|array $messageId Translation string
-     * @param  string $alt Alternative string to return IF no value is found set for the key
-     * @return string
-     */
-    public function translate($messageId, $alt = null)
-    {
-        if (is_array($messageId))
-        {
-            trigger_error('Plurals are not yet supported by TYPO3 translation adapter.', E_USER_NOTICE);
-            $messageId = (string) $messageId[0];
+        $langKeys = array(current(explode('_', $locale)));
+        
+        // Look up alternative languages and setup routing:
+        if ($GLOBALS['TSFE']->config['config']['language_alt'])	{
+            $langKeys[] = $GLOBALS['TSFE']->config['config']['language_alt'];
+            $route = array(
+                $langKeys[0] => $langKeys[1],
+                $langKeys[1] => 'en'
+            );
+		}else{
+		    $route = array($langKeys[0] => 'en');
+		}
+        $this->setOptions(array('route' =>$route));
+		
+        // Try to load the configured files
+        if ($data === 'default') {
+            $paths = array('locallang.xml');
+        }elseif(is_string($data)) {
+            $paths = array($paths);
+        }elseif(is_array($data)) {
+            $paths = $data;
+        }else{
+            throw new Zfext_Exception('No valid translation data provided');
         }
         
-        if (!Zfext_Plugin::getInstance()->LOCAL_LANG_loaded)
-        {
-            $dir = Zend_Controller_Front::getInstance()->getDispatcher()->getControllerDirectory();
-            $dir = realpath($dir.'/../');
-            if (is_readable($dir.'/locallang.php') || is_readable($dir.'/locallang.xml')) {
-        		Zfext_Plugin::getInstance()->pi_loadLL();
-            }else{
-            	Zfext_Plugin::getInstance()->LOCAL_LANG_loaded = true;
+        $plugin = Zfext_Plugin::getInstance();
+        $rootPath = t3lib_extMgm::extPath($plugin->extKey);
+        $translationData = array();        
+        
+        foreach ($paths as $path) {
+            $basePath = $rootPath.ltrim($path, '\\/');
+            foreach ($langKeys as $langKey) {
+		        $translationData = array_merge(
+		            $translationData,
+		            (array) t3lib_div::readLLfile($basePath, $langKey, $GLOBALS['TSFE']->renderCharset)
+		        );
             }
         }
         
-        return Zfext_Plugin::getInstance()->pi_getLL($messageId, $alt == null ? $messageId : $alt);
+		// Overlaying labels from TypoScript (including fictitious language keys for non-system languages!):
+		if (is_array($plugin->conf['_LOCAL_LANG.']))	{
+			reset($plugin->conf['_LOCAL_LANG.']);
+			while(list($k,$lA)=each($plugin->conf['_LOCAL_LANG.']))	{
+				if (is_array($lA))	{
+					$k = substr($k,0,-1);
+					foreach($lA as $llK => $llV) {
+						if (!is_array($llV)) {
+						    // For labels coming from the TypoScript (database) the charset is assumed to be
+						    // "forceCharset" and if that is not set, assumed to be that of the individual system languages
+						    // TODO: Really invoke this in translator somehow:
+						    if ($GLOBALS['TYPO3_CONF_VARS']['BE']['forceCharset']) {
+						        $translationDataCharsets[$k][$llK] = $GLOBALS['TYPO3_CONF_VARS']['BE']['forceCharset'];
+						    }else{
+						        $translationDataCharsets[$k][$llK] = $GLOBALS['TSFE']->csConvObj->charSetArray[$k];
+						    }
+							$translationData[$k][$llK] = $llV;
+						}
+					}
+				}
+			}
+		}
+		
+		// Merge 'default' keys to english as Zend_Translate doesn't
+		// accept 'default' as locale
+		if (array_key_exists('default', $translationData)) {
+		    if (array_key_exists('en', $translationData)) {
+		        $translationData['en'] = array_merge(
+		            $translationData['default'],
+		            $translationData['en']
+		        );
+		    }else{
+		        $translationData['en'] = $translationData['default'];
+		    }
+		    unset($translationData['default']);
+		}
+		
+		// When $locale was full qualified, provide it:
+		if ($langKeys[0] != $locale) {
+		    $translationData[$locale] = (array) $translationData[$langKeys[0]];
+		}
+		
+		return $translationData;
     }
     
     /**
