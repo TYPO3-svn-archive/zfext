@@ -90,8 +90,9 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
 	    	
 	    	if (empty($piVars[$mKey]) || $piVars[$mKey] == $module) {
 		    	$options['defaultController'] = $controller;
-		    	$options['defaultModule'] = $module;
 	    	}
+	    	
+		    $options['defaultModule'] = $module;
 	    }
 	    
 	    // This could be done better but for now it's ok
