@@ -254,7 +254,11 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
         
         $this->_plugin->pi_linkTP('|', $globalParams, $cache, $altPageId);
         
-        return $this->_plugin->cObj->lastTypoLinkUrl;
+        $url = $this->_plugin->cObj->lastTypoLinkUrl;
+        if ($encode) {
+            $url = urlencode($url);
+        }
+        return $url;
     }
     
     /**
