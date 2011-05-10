@@ -240,15 +240,21 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
         $front = Zend_Controller_Front::getInstance();
         $request = $front->getRequest();
         
-        // Filter out unnecessary keys:
-        foreach ($localParams as $param => $value) {
-        	if (
-        		($param == $request->getModuleKey() && $value == $front->getDefaultModule()) ||
-        		($param == $request->getControllerKey() && $value == $front->getDefaultControllerName()) ||
-        		($param == $request->getActionKey() && $value == $front->getDefaultAction())
-        	) {
-	    		unset($localParams[$param]);
-	    	}
+        // Filter out unnecessary keys - but only on this site:
+        if ($altPageId == $GLOBALS['TSFE']->id) {
+            $mKey = $request->getModuleKey();
+            $cKey = $request->getControllerKey();
+            $aKey = $request->getActionKey();
+            
+            if (isset($localParams[$mKey]) && $localParams[$mKey] == $front->getDefaultModule()) {
+                unset($localParams[$mKey]);
+                if (isset($localParams[$cKey]) && $localParams[$cKey] == $front->getDefaultControllerName()) {
+                    unset($localParams[$cKey]);
+                    if (isset($localParams[$aKey]) && $localParams[$aKey] == $front->getDefaultAction()) {
+                        unset($localParams[$aKey]);
+                    }
+                }
+            }
         }
         
         $globalParams[$prefixId] = $localParams;
