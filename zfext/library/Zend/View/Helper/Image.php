@@ -58,7 +58,8 @@ class Zend_View_Helper_Image extends Zend_View_Helper_Abstract
 		$imageInfo = $cObj->getImgResource($src, $conf);
 		$GLOBALS['TSFE']->lastImageInfo = $imageInfo;
 		if (!is_array($imageInfo)) {
-			throw new Zend_View_Exception('Could not get image resource for "' . htmlspecialchars($src) . '".' , 1253191060);
+			$this->_imageInfo = array(0, 0, '', '');
+			return $this;
 		}
 		$imageInfo[3] = t3lib_div::png_to_gif_by_imagemagick($imageInfo[3]);
 		$GLOBALS['TSFE']->imagesOnPage[] = $imageInfo[3];
