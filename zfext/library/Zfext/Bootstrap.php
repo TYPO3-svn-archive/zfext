@@ -56,6 +56,7 @@ class Zfext_Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 	    }
 		
 	    $front
+		->setRequest(new Zfext_Controller_Request_Plugin())
 		->setResponse(new Zfext_Controller_Response_Plugin())
 		->setDispatcher(new Zfext_Controller_Dispatcher_Plugin())
 		->setRouter(new Zfext_Controller_Router_Typo3());
