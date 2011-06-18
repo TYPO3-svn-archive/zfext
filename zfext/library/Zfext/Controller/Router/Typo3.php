@@ -169,8 +169,7 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
      */
     public function assemble($userParams, $name = null, $reset = false, $encode = true)
     {
-        if (is_string($name) && stripos($name, 'xhr') === 0)
-        {
+        if (is_string($name) && stripos($name, 'xhr') === 0) {
             $parts = explode('.', $name);
             $name = (isset($parts[1])) ? $parts[1] : null;
             $userParams['gp:eID'] = 'zfext';
@@ -198,8 +197,7 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
         }
         
         //Filter the params:
-        foreach ($userParams as $param => $value)
-        {
+        foreach ($userParams as $param => $value) {
         	if (preg_match(self::GLOBALS_PATTERN, $param, $matches)) {
         	    $globalParams[$matches[1]] = $value;
         	}
@@ -217,16 +215,14 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
         $altPageId = 0;
         $cache = 0;
         
-        if (!empty($globalParams['id']))
-        {
+        if (!empty($globalParams['id'])) {
             $altPageId = $globalParams['id'];
             unset($globalParams['id']);
         }
         
-        if (!$reset)
-        {
+        if (!$reset) {
             $getParams = $_GET;
-            unset($getParams[$prefixId], $getParams['id']);
+            unset($getParams[$prefixId], $getParams['id'],$getParams['eID'], $getParams['tx_zfext']);
             $globalParams = $this->_mergeParams($getParams, $globalParams);
             $localParams = $this->_mergeParams((array) $this->_plugin->piVars, $localParams);
             
