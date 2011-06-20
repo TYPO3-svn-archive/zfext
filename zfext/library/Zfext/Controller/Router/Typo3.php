@@ -176,9 +176,13 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
             $userParams['gp:tx_zfext'] = array('eid' => $this->_plugin->prefixId);
         }
         
-        if (!count($userParams))
-        {
-            return $this->_plugin->pi_linkTP_keepPIvars_url();
+        if (!count($userParams)) {
+            if ($reset) {
+                $this->_plugin->pi_linkTP('|');
+                return $this->_plugin->cObj->lastTypoLinkUrl;
+            } else {
+                return $this->_plugin->pi_linkTP_keepPIvars_url();
+            }
         }
         
         $route = (is_string($name) && strlen($name) && $name != 'default') ? strtolower($name) : $this->_defaultRoute;
@@ -226,8 +230,7 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
             $globalParams = $this->_mergeParams($getParams, $globalParams);
             $localParams = $this->_mergeParams((array) $this->_plugin->piVars, $localParams);
             
-            if ($this->_plugin->pi_autoCacheEn)
-            {
+            if ($this->_plugin->pi_autoCacheEn) {
                 $cache = $this->_plugin->pi_autoCache($localParams);
             }
         }
