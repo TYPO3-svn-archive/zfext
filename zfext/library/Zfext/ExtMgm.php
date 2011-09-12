@@ -1,7 +1,7 @@
 <?php
 /**
  * Zfext - Zend Framework for TYPO3
- * 
+ *
  * LICENSE
  *
  * This script is part of the TYPO3 project. The TYPO3 project is
@@ -19,7 +19,7 @@
  * GNU General Public License for more details.
  *
  * This copyright notice MUST APPEAR in all copies of the script!
- * 
+ *
  * @copyright  Copyright (c) 2010 Christian Opitz - Netzelf GbR (http://netzelf.de)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU General Public License
  * @version    $Id$
@@ -27,7 +27,7 @@
 
 /**
  * A little brother of t3lib_extMgm
- * 
+ *
  * @category   TYPO3
  * @package    Zfext
  * @author     Christian Opitz <co@netzelf.de>
@@ -35,14 +35,16 @@
 class Zfext_ExtMgm
 {
     const TS_PATH = 'plugin.tx_zfext';
-    
+
+    const ZF_LIBRARY = 'zfLibrary';
+
 	/**
 	 * @var array All plugin options
 	 */
 	protected static $_pluginOptions = array();
-	
-	protected static $_zfLoaded = false;
-	
+
+	protected static $_loadedLibraries = array();
+
 	/**
 	 * @var array Default attributes for addPItoST43()
 	 */
@@ -55,7 +57,7 @@ class Zfext_ExtMgm
 		'controllerDirectory' => 'controllers',
 		'modules' => false
 	);
-	
+
 	/**
 	 * @var array Default options - added to zfext-resource if altered
 	 */
@@ -69,31 +71,31 @@ class Zfext_ExtMgm
 		'autoloader' => true,
 		'prefixDefaultModule' => false
 	);
-	
+
 	protected static $_ignoreNamespaces = array('Zend','ZendX');
-	
+
 	/**
 	 * Registers a library for a given extension.
-	 * 
+	 *
 	 * When autoload is set to true, this will scan the specified directory for
 	 * dirs that look like potential namespaces for autoloading (First letter of
 	 * dir is uppercase and no dot) and add them to the autoloadNamespace-list.
 	 * @see Zend_Application_Resource_Zfext#init()
-	 * 
+	 *
 	 * @param string $extKey The extension key
 	 * @param string $directory OPTIONAL The directory relative to the extension root
-	 * @param boolean $autoload OPTIONAL If potential libraries should be detected 
+	 * @param boolean $autoload OPTIONAL If potential libraries should be detected
 	 * 									 and registered to Zend_Loader_Autoload
 	 */
 	public static function addLibrary($extKey, $directory = null, $autoload = true)
 	{
 	    $libraryPath = 'EXT:'.$extKey;
-	    
+
 	    if ($directory != null && is_string($directory)) {
 	        $directory = trim(str_replace("\\",'/',$directory), '/');
 	        $libraryPath .= '/'.$directory;
 	    }
-	    
+
 	    if ($autoload) {
 	    	try {
 	            $iterator = new DirectoryIterator(t3lib_extMgm::extPath($extKey).$directory);
@@ -104,7 +106,7 @@ class Zfext_ExtMgm
 	        foreach ($iterator as $item) {
 	            if ($item->isDir()) {
 	                $first = substr($item->getFilename(),0,1);
-	                if (preg_match('/[A-Z]/',$first) && 
+	                if (preg_match('/[A-Z]/',$first) &&
 	                    !in_array($item->getFilename(), self::$_ignoreNamespaces)) {
 	                    $namespaces[] = $item->getFilename();
 	                }
@@ -112,37 +114,44 @@ class Zfext_ExtMgm
 	        }
 	        $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['zfext']['autoloadNamespaces'] = $namespaces;
 	    }
-	    
+
 	    $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['zfext']['includePaths'][$extKey] = $libraryPath;
 	}
-	
+
 	/**
 	 * Add a library to the include path and init autoload for it if required -
-	 * loads Zend Framework when configured added with Zfext_ExtMgm::addLibrary
-	 * 
-	 * @param string $extKey
+	 * loads Zend Framework when added with Zfext_ExtMgm::addLibrary
+	 *
+	 * @param string $extKey Extension key or the ZF library only when Zfext_ExtMgm::ZF_LIBRARY
 	 */
 	public static function loadLibrary($extKey)
 	{
+	    if (self::isLibraryLoaded($extKey)) {
+	        return;
+	    }
+
 		$paths = (array) $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['zfext']['includePaths'];
 		$loadPaths = array();
-		
-		if (!self::$_zfLoaded) {
-			if (!empty($paths['zfLibrary']) && is_string($paths['zfLibrary'])) {
-				$loadPaths[] = self::realpath($paths['zfLibrary']);
+
+		if (!self::isLibraryLoaded(self::ZF_LIBRARY)) {
+			if (!empty($paths[self::ZF_LIBRARY]) && is_string($paths[self::ZF_LIBRARY])) {
+				$loadPaths[self::ZF_LIBRARY] = self::realpath($paths[self::ZF_LIBRARY]);
 			}
 		}
-		
-		if (!empty($paths[$extKey])) {
-			$loadPaths[] = self::realpath($paths[$extKey]);
+
+		if ($extKey != self::ZF_LIBRARY && !empty($paths[$extKey])) {
+			$loadPaths[$extKey] = self::realpath($paths[$extKey]);
 		}
-		
+
 		if (count($loadPaths)) {
 			$loadPaths[] = get_include_path();
 			set_include_path(implode(PATH_SEPARATOR, $loadPaths));
+			foreach ($loadPaths as $key => $path) {
+			    self::$_loadedLibraries[$key] = 1;
+			}
 		}
-		
-		if (!self::$_zfLoaded) {
+
+		if ($extKey != self::ZF_LIBRARY) {
 			$nsList = (array) $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['zfext']['autoloadNamespaces'];
         	if (count($nsList)) {
         		require_once 'Zend/Loader/Autoloader.php';
@@ -150,13 +159,22 @@ class Zfext_ExtMgm
 		        Zend_Loader_Autoloader::getInstance()->registerNamespace($namespaces);
         	}
 		}
-		
-		self::$_zfLoaded = true;
 	}
-	
+
+	/**
+	 * Returns if this particular library is already loaded
+	 *
+	 * @param string $extKey Extension key or the ZF library only when Zfext_ExtMgm::ZF_LIBRARY
+	 * @return boolean
+	 */
+	public static function isLibraryLoaded($extKey)
+	{
+	    return array_key_exists($extKey, self::$_loadedLibraries);
+	}
+
 	/**
 	 * Adds an cliKey to $TYPO3_CONF_VARS and registers the manifest(s)
-	 * 
+	 *
 	 * @param string $extKey Extension key (required to load libraries for this cliKey)
 	 * @param string $cliKey CLI-Key
 	 * @param string|array $manifest Manifest classname or array of manifest classnames
@@ -173,10 +191,10 @@ class Zfext_ExtMgm
 		    'manifest' => $manifest
 		);
 	}
-	
+
 	/**
 	 * Returns canonicalized absolute pathname for TYPO3-paths
-	 * 
+	 *
 	 * @param string $path
 	 * @return string
 	 */
@@ -191,11 +209,11 @@ class Zfext_ExtMgm
 		}
 		return realpath($path);
 	}
-	
+
 	/**
 	 * Proxy for @link t3lib_extMgm::addPItoST43() - Generates the
 	 * setup that will proxy plugins over @link tx_zfext::main()
-	 * 
+	 *
 	 * @param string $extKey The extension key
 	 * @param array $options Options and arguments (@see $_defaultPluginAttributes
 	 * and $_defaultPluginOptions)
@@ -207,9 +225,9 @@ class Zfext_ExtMgm
 			$options
 		);
 		$extKey = strtolower($extKey);
-		
+
 		$prefixId = t3lib_extMgm::getCN($extKey).$options['suffix'];
-		
+
 		self::_addPiToSt43(
 			$extKey,
 			'',
@@ -217,14 +235,14 @@ class Zfext_ExtMgm
 			$options['type'],
 			$options['cached']
 		);
-		
+
 		$pluginOptions = array_intersect_key(
 			$options,
 			self::$_defaultPluginOptions
 		);
-		
+
 		$setup = "plugin.{$prefixId}.zfext {\n";
-		
+
 		$dir = trim(str_replace('\\', '/', $options['directory']), "/");
 		$setup .= 'resources.frontcontroller.';
 		if ($options['modules']) {
@@ -233,15 +251,15 @@ class Zfext_ExtMgm
 			$cDir = trim(str_replace('\\', '/', $options['controllerDirectory']), "/");
 			$setup .= 'controllerdirectory = EXT:'.$extKey.'/'.$dir.'/'.$cDir;
 		}
-		
+
 		if (!empty($options['defaultModule'])) {
 			$setup .= "\nresources.frontcontroller.defaultmodule = ".$options['defaultModule'];
 		}
-		
+
 		if (!empty($options['prefixDefaultModule'])) {
 			$setup .= "\nresources.frontcontroller.params.prefixDefaultModule = ".$options['prefixDefaultModule'];
 		}
-		
+
 		if (count($pluginOptions)) {
 			foreach ($pluginOptions as $key => $value)
 			{
@@ -249,14 +267,14 @@ class Zfext_ExtMgm
 			}
 		}
 		$setup .= "\n}";
-		
+
 		t3lib_extMgm::addTypoScriptSetup($setup);
 	}
-	
+
 	protected static function _addPiToSt43($key, $classFile = '', $prefix = '', $type = 'list_type', $cached = 0)
 	{
 	    global $TYPO3_LOADED_EXT;
-		
+
 	    $prefixId = t3lib_extMgm::getCN($key).$prefix;
 	    $comment = '# Setting '.$key.' plugin TypoScript';
 	    $EOL = "\n";
@@ -289,7 +307,7 @@ class Zfext_ExtMgm
 				$addLine = 'tt_content.splash.'.$key.$prefix.' = < plugin.'.$prefixId;
 			break;
 			case 'CType':
-				$addLine = 
+				$addLine =
 				'tt_content.'.$key.$prefix.' = COA'.$EOL.
                 'tt_content.'.$key.$prefix.' {'.$EOL.
 				'10 = < lib.stdheader'.$EOL.
@@ -311,10 +329,10 @@ class Zfext_ExtMgm
 			t3lib_extMgm::addTypoScript($key, 'setup', $comment.$EOL.$addLine, 43);
 		}
 	}
-	
+
 	/**
 	 * Get the namespace for the plugin (fi. Tx_Zfext)
-	 * 
+	 *
 	 * @param string $key Extension key
 	 * @param string|null $suffix The suffix to use (eg. _pi1)
 	 * @return string
@@ -326,8 +344,8 @@ class Zfext_ExtMgm
 	    {
 	        return $useNamespace;
 	    }
-	    
-	    
+
+
 		$extKey = self::getPluginOption($prefixId, 'extKey');
 	    $keyParts = explode('_', $extKey);
 		if (strtolower($keyParts[0]) == 'tx')
@@ -339,12 +357,12 @@ class Zfext_ExtMgm
 		{
 			$namespace .= ucfirst($part);
 		}
-		
+
 		if (self::getPluginOption($prefixId, 'suffixInClassName'))
 		{
 			$cn = t3lib_extMgm::getCN($extKey);
 		    $suffix = str_replace($cn, '', $prefixId);
-		    
+
 		    if (strlen($suffix))
 		    {
 		        $namespace .= '_'.ucfirst(trim($suffix,'_'));
@@ -353,12 +371,12 @@ class Zfext_ExtMgm
 		self::setPluginOption($prefixId, 'namespace', $namespace);
 		return $namespace;
 	}
-	
+
 	/**
 	 * Sets all plugin options where the keys of the first level
-	 * are the prefix ids and theyr values are the options for 
+	 * are the prefix ids and theyr values are the options for
 	 * that plugin. Merges this options with the default options.
-	 * 
+	 *
 	 * @param array $options
 	 */
 	protected static function _checkPluginOptions($prefixId)
@@ -366,16 +384,16 @@ class Zfext_ExtMgm
 		if (is_array(self::$_pluginOptions[$prefixId])) {
 			return;
 		}
-		
+
 		$options = (array) $GLOBALS['TSFE']->tmpl->setup['plugin.'][$prefixId.'.']['zfext.'];
-		
+
 		if (empty($options['signature'])) {
 			throw new Zfext_Exception($prefixId.' is not a ZfExt-plugin!');
 	    }
-		
+
 	    $parts = explode('.', $options['signature']);
 	    $options['extKey'] = $parts[0];
-	    
+
 		foreach (self::$_defaultPluginOptions as $key => $val)
 		{
 		    if (!empty($val) && !isset($options[$key])) {
@@ -384,10 +402,10 @@ class Zfext_ExtMgm
 		}
 	    self::$_pluginOptions[$prefixId] = $options;
 	}
-	
+
 	/**
 	 * Set an option for a specific plugin
-	 * 
+	 *
 	 * @param string $prefixId
 	 * @param string $key Option key
 	 * @param string $value Option value
@@ -395,30 +413,30 @@ class Zfext_ExtMgm
 	public static function setPluginOption($prefixId, $key, $value)
 	{
 	    self::_checkPluginOptions($prefixId);
-	    
+
 		if (!is_array(self::$_pluginOptions[$prefixId]))
 	    {
 	        self::$_pluginOptions[$prefixId] = self::$_defaultPluginOptions;
 	    }
 	    self::$_pluginOptions[$prefixId][$key] = $value;
 	}
-	
+
 	/**
 	 * Returns the merged options for a plugin identified by prefixId
-	 * 
+	 *
 	 * @param string $prefixId
 	 * @return array
 	 */
 	public static function getPluginOptions($prefixId, $filterOutEmpty = true)
 	{
 		self::_checkPluginOptions($prefixId);
-		
+
 		return self::$_pluginOptions[$prefixId];
 	}
-	
+
 	/**
 	 * Returns an option for a plugin identified by prefixId
-	 * 
+	 *
 	 * @param string $prefixId
 	 * @param string $key
 	 * @return mixed|null
@@ -426,7 +444,7 @@ class Zfext_ExtMgm
 	public static function getPluginOption($prefixId, $key)
 	{
 		self::_checkPluginOptions($prefixId);
-		
+
 	    if (!isset(self::$_pluginOptions[$prefixId][$key]))
 	    {
 	        return null;
