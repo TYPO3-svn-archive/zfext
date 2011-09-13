@@ -75,7 +75,10 @@ class Zfext_Plugin
 	        throw new Zfext_Exception('No plugin set');
 	    }
 	    if (!array_key_exists($plugin->prefixId, self::$_configs)) {
-	        self::$_configs[$plugin->prefixId] = new Zfext_Config_Typoscript($plugin->conf);
+	        self::$_configs[$plugin->prefixId] = new Zfext_Config_Typoscript(
+	            // Exclude zfext-config:
+	            array_diff_key($plugin->conf, array('zfext' => 1, 'zfext.' => 1))
+	        );
 	    }
 	    return $key ? self::$_configs[$plugin->prefixId]->get($key) : self::$_configs[$plugin->prefixId];
 	}
