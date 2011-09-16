@@ -1,7 +1,7 @@
 <?php
 /**
  * Zfext - Zend Framework for TYPO3
- * 
+ *
  * LICENSE
  *
  * This script is part of the TYPO3 project. The TYPO3 project is
@@ -19,7 +19,7 @@
  * GNU General Public License for more details.
  *
  * This copyright notice MUST APPEAR in all copies of the script!
- * 
+ *
  * @copyright  Copyright (c) 2010 Christian Opitz - Netzelf GbR (http://netzelf.de)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU General Public License
  * @version    $Id: Bootstrap.php 36506 2010-08-08 15:46:09Z metti $
@@ -27,7 +27,7 @@
 
 /**
  * Access to cObject->cObjGetSingle
- * 
+ *
  * @category   TYPO3
  * @package    Zend_View
  * @subpackage Helper
@@ -49,28 +49,30 @@ class Zend_View_Helper_CObject extends Zend_View_Helper_Abstract
 	{
 		$pathSegments = explode('.', $typoscriptObjectPath);
 		$typoscriptObject = $pathSegments[count($pathSegments) - 1];
-		
+
 		if (count($pathSegments) > 1) {
 			$setup = $GLOBALS['TSFE']->tmpl->setup;
 			$lastPart = array_pop($pathSegments);
-			
+
 			foreach ($pathSegments as $segment) {
 				if (!array_key_exists($segment . '.', $setup)) {
 					throw new Zend_View_Exception('TypoScript object path "' . htmlspecialchars($typoscriptObjectPath) . '" does not exist');
 				}
 				$setup = $setup[$segment . '.'];
 			}
-			
+
 			$typoscriptObject = $setup[$lastPart];
 			$setup = $setup[$lastPart.'.'];
 		}else{
 			$typoscriptObject = $typoscriptObjectPath;
 			$setup = array();
 		}
+		if (strpos($typoscriptObject, '<') === 0) {
+		    return $this->cObject(trim(substr($typoscriptObject, 1)), $mySetup);
+		}
 		if (is_array($mySetup)) {
 			$setup = t3lib_div::array_merge_recursive_overrule($setup, $mySetup);
 		}
-		
 		return Zfext_Plugin::getInstance()->cObj->cObjGetSingle($typoscriptObject, $setup);
 	}
 }
