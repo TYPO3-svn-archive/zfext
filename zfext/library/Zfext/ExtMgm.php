@@ -82,40 +82,36 @@ class Zfext_ExtMgm
 	 * dir is uppercase and no dot) and add them to the autoloadNamespace-list.
 	 * @see Zend_Application_Resource_Zfext#init()
 	 *
+	 * Options are:
+	 * - autoload:
+	 *   If potential libraries should be detected and registered to
+	 *   Zend_Loader_Autoload (defaults to true)
+	 * - loadAtSessionStart:
+	 *   Load the libraries before a session is started. This is needed when you
+	 *   put classes from that library into session (defaults to false)
+	 *   (@link http://forge.typo3.org/issues/29932)
+	 * - depends:
+	 *   Comma separated list of libraries this library depends on - the Zend
+	 *   library is loaded anyway, so you don't need to add it (defaults to '')
+	 *
 	 * @param string $extKey The extension key
 	 * @param string $directory OPTIONAL The directory relative to the extension root
-	 * @param boolean $autoload OPTIONAL If potential libraries should be detected
-	 * 									 and registered to Zend_Loader_Autoload
+	 * @param array $options OPTIONAL Options - see above
 	 */
-	public static function addLibrary($extKey, $directory = null, $autoload = true)
+	public static function addLibrary($extKey, $directory = null, $options = array())
 	{
-	    $libraryPath = 'EXT:'.$extKey;
+	    if (!is_array($options)) {
+	        // Legacy - the third argument was autoload before:
+	        $options = array('autoload' => $options);
+	    }
 
+	    $options['path'] = 'EXT:'.$extKey;
 	    if ($directory != null && is_string($directory)) {
 	        $directory = trim(str_replace("\\",'/',$directory), '/');
-	        $libraryPath .= '/'.$directory;
+	        $options['path'] .= '/'.$directory;
 	    }
 
-	    if ($autoload) {
-	    	try {
-	            $iterator = new DirectoryIterator(t3lib_extMgm::extPath($extKey).$directory);
-	        }catch(Exception $e) {
-	            return;
-	        }
-	        $namespaces = (array) $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['zfext']['autoloadNamespaces'];
-	        foreach ($iterator as $item) {
-	            if ($item->isDir()) {
-	                $first = substr($item->getFilename(),0,1);
-	                if (preg_match('/[A-Z]/',$first) &&
-	                    !in_array($item->getFilename(), self::$_ignoreNamespaces)) {
-	                    $namespaces[] = $item->getFilename();
-	                }
-	            }
-	        }
-	        $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['zfext']['autoloadNamespaces'] = $namespaces;
-	    }
-
-	    $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['zfext']['includePaths'][$extKey] = $libraryPath;
+	    $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['zfext']['libraries'][$extKey] = $options;
 	}
 
 	/**
@@ -126,39 +122,59 @@ class Zfext_ExtMgm
 	 */
 	public static function loadLibrary($extKey)
 	{
+	    if ($extKey != self::ZF_LIBRARY) {
+	        self::loadLibrary(self::ZF_LIBRARY);
+	    }
+
 	    if (self::isLibraryLoaded($extKey)) {
 	        return;
 	    }
 
-		$paths = (array) $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['zfext']['includePaths'];
-		$loadPaths = array();
+		$options = (array) $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['zfext']['libraries'][$extKey];
+		if (empty($options)) {
+		    return;
+		}
+		$options += array(
+		    'autoload' => true,
+		    'loadAtSessionStart' => false,
+		    'depends' => ''
+		);
 
-		if (!self::isLibraryLoaded(self::ZF_LIBRARY)) {
-			if (!empty($paths[self::ZF_LIBRARY]) && is_string($paths[self::ZF_LIBRARY])) {
-				$loadPaths[self::ZF_LIBRARY] = self::realpath($paths[self::ZF_LIBRARY]);
-			}
+		if ($options['depends']) {
+		    $depends = explode(',', (string) $options['depends']);
+		    foreach ($depends as $key) {
+		        if ($key != $extKey) {
+		            self::loadLibrary($key);
+		        }
+		    }
 		}
 
-		if ($extKey != self::ZF_LIBRARY && !empty($paths[$extKey])) {
-			$loadPaths[$extKey] = self::realpath($paths[$extKey]);
-		}
+		$path = t3lib_div::getFileAbsFileName($options['path']);
+		set_include_path(implode(PATH_SEPARATOR, array($path, get_include_path())));
 
-		if (count($loadPaths)) {
-			$loadPaths[] = get_include_path();
-			set_include_path(implode(PATH_SEPARATOR, $loadPaths));
-			foreach ($loadPaths as $key => $path) {
-			    self::$_loadedLibraries[$key] = 1;
-			}
-		}
-
-		if ($extKey != self::ZF_LIBRARY) {
-			$nsList = (array) $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['zfext']['autoloadNamespaces'];
-        	if (count($nsList)) {
+		if ($options['autoload'] && $extKey != self::ZF_LIBRARY) {
+		    try {
+	            $iterator = new DirectoryIterator($path);
+	        }catch(Exception $e) {
+	            $iterator = array();
+	        }
+	        $namespaces = array();
+	        foreach ($iterator as $item) {
+	            if ($item->isDir()) {
+	                $first = substr($item->getFilename(),0,1);
+	                if (preg_match('/[A-Z]/',$first) &&
+	                    !in_array($item->getFilename(), self::$_ignoreNamespaces)) {
+	                    $namespaces[] = $item->getFilename();
+	                }
+	            }
+	        }
+        	if (count($namespaces)) {
         		require_once 'Zend/Loader/Autoloader.php';
-		        $namespaces = array_unique($nsList);
 		        Zend_Loader_Autoloader::getInstance()->registerNamespace($namespaces);
         	}
 		}
+
+		self::$_loadedLibraries[$extKey] = 1;
 	}
 
 	/**
