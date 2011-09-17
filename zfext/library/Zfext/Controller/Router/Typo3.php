@@ -141,7 +141,8 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
 	            $params[$this->_controllerKey] = $this->_defaults[$this->_controllerKey];
 	        }
 	    }
-	    if (isset($piVars[$this->_controllerKey]) && $piVars[$this->_controllerKey] != $defaults[$this->_controllerKey]) {
+	    if (isset($piVars[$this->_moduleKey]) && $piVars[$this->_moduleKey] != $defaults[$this->_moduleKey] ||
+	    isset($piVars[$this->_controllerKey]) && $piVars[$this->_controllerKey] != $defaults[$this->_controllerKey]) {
 	        if (!isset($piVars[$this->_actionKey])) {
 	            $params[$this->_actionKey] = $this->_defaults[$this->_actionKey];
 	        }
