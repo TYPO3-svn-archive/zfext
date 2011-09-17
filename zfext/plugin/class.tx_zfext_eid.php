@@ -1,7 +1,7 @@
 <?php
 /**
  * Zfext - Zend Framework for TYPO3
- * 
+ *
  * LICENSE
  *
  * This script is part of the TYPO3 project. The TYPO3 project is
@@ -19,7 +19,7 @@
  * GNU General Public License for more details.
  *
  * This copyright notice MUST APPEAR in all copies of the script!
- * 
+ *
  * @copyright  Copyright (c) 2010 Christian Opitz - Netzelf GbR (http://netzelf.de)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU General Public License
  * @version    $Id$
@@ -45,56 +45,58 @@ class tx_zfext_eid extends tx_zfext
      * @var tslib_fe
      */
     protected $_tsfe;
-    
+
     /* (non-PHPdoc)
      * @see plugin/tx_zfext#main()
      */
     public function main()
     {
         $conf = t3lib_div::_GET('tx_zfext');
-        if (empty($conf['eid']))
-        {
+        if (empty($conf['eid'])) {
             return;
         }
-        
+
         /* $this->_tsfe = $GLOBALS['TSFE'] = t3lib_div::makeInstance(
-        	'tslib_fe', 
-            $GLOBALS['TYPO3_CONF_VARS'], 
+        	'tslib_fe',
+            $GLOBALS['TYPO3_CONF_VARS'],
             (integer) t3lib_div::_GET('id'),
             (integer) t3lib_div::_GP('type')
         ); */
         //Compatible to 4.2:
         $temp_TSFEclassName = t3lib_div::makeInstanceClassName('tslib_fe');
 		$this->_tsfe = $GLOBALS['TSFE'] = new $temp_TSFEclassName(
-			$GLOBALS['TYPO3_CONF_VARS'], 
+			$GLOBALS['TYPO3_CONF_VARS'],
             (integer) t3lib_div::_GET('id'),
             (integer) t3lib_div::_GP('type')
         );
-        
+
         $this->_tsfe->connectToDB();
         $this->_tsfe->initTemplate();
-        
+
         $this->_tsfe->initFEuser();
         $this->_tsfe->checkAlternativeIdMethods();
 	    $this->_tsfe->determineId();
         $this->_tsfe->getPageAndRootline();
-        
+
         //Seems to be needed prior to 4.3 to only:
         $this->_tsfe->getConfigArray();
-        
-        if (empty($this->_tsfe->tmpl->setup['plugin.'][$conf['eid'].'.']['zfext']))
-	    {
+
+        if (empty($this->_tsfe->tmpl->setup['plugin.'][$conf['eid'].'.']['zfext'])) {
 	        return;
 	    }
-	    
+
         $this->_tsfe->settingLanguage();
 	    $this->_tsfe->settingLocale();
-        
+
         $this->cObj = t3lib_div::makeInstance('tslib_cObj');
-	    
+        if (!empty($conf['ceid'])) {
+            $res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*', 'tt_content', 'uid='.(int) $conf['ceid']);
+            $this->cObj->data = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
+        }
+
 	    return parent::main('', $this->_tsfe->tmpl->setup['plugin.'][$conf['eid'].'.']);
     }
-    
+
     /* (non-PHPdoc)
      * @see typo3/sysext/cms/tslib/tslib_pibase#pi_wrapInBaseClass()
      */

@@ -251,7 +251,10 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
             $parts = explode('.', $name);
             $name = (isset($parts[1])) ? $parts[1] : null;
             $userParams['gp:eID'] = 'zfext';
-            $userParams['gp:tx_zfext'] = array('eid' => $this->_plugin->prefixId);
+            $userParams['gp:tx_zfext'] = array(
+                'eid' => $this->_plugin->prefixId,
+            	'ceid' => $this->_plugin->cObj->getFieldVal('uid')
+            );
         }
 
         if (!count($userParams)) {
