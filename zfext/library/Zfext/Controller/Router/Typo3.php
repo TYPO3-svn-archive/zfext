@@ -134,19 +134,7 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
 	    $defaults = $this->_getPageDefaults(0);
 	    $params = array_merge($defaults, $piVars);
 
-	    // Fix eventually non existing module<->controller and controller<->action combinations
-	    // We could also do this in assemblage but then we would have a lot longer urls
-	    if (isset($piVars[$this->_moduleKey]) && $piVars[$this->_moduleKey] != $defaults[$this->_moduleKey]) {
-	        if (!isset($piVars[$this->_controllerKey])) {
-	            $params[$this->_controllerKey] = $this->_defaults[$this->_controllerKey];
-	        }
-	    }
-	    if (isset($piVars[$this->_moduleKey]) && $piVars[$this->_moduleKey] != $defaults[$this->_moduleKey] ||
-	    isset($piVars[$this->_controllerKey]) && $piVars[$this->_controllerKey] != $defaults[$this->_controllerKey]) {
-	        if (!isset($piVars[$this->_actionKey])) {
-	            $params[$this->_actionKey] = $this->_defaults[$this->_actionKey];
-	        }
-	    }
+	    $this->_checkIncomingMcaCombinations($params, $piVars, $defaults);
 
 	    // Set params to the request
 	    foreach ($params as $param => $value) {
@@ -322,11 +310,75 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
             unset($globalParams['id']);
         }
 
-        $globalParams[$prefixId] = $this->_arrayDiff($localParams, $this->_getPageDefaults($altPageId));
+        $finalParams = $this->_arrayDiff($localParams, $this->_getPageDefaults($altPageId));
+        $this->_checkOutgoingMcaCombinations($finalParams, $localParams, $this->_defaults);
+        $globalParams[$prefixId] = $finalParams;
 
         $this->_plugin->pi_linkTP('|', $globalParams, $cache, $altPageId);
 
         return $this->_plugin->cObj->lastTypoLinkUrl;
+    }
+
+    /**
+     * Check for eventually non existing module<->controller and controller<->action
+     * combinations and fix them
+     *
+     * @param array $finalParams
+     * @param array $rawParams
+     * @param array $defaults
+     */
+    protected function _checkIncomingMcaCombinations(&$final, $raw, $defaults)
+    {
+	    if (isset($raw[$this->_moduleKey]) &&
+	    $raw[$this->_moduleKey] != $defaults[$this->_moduleKey] &&
+	    !isset($raw[$this->_controllerKey])) {
+	        $final[$this->_controllerKey] = $this->_defaults[$this->_controllerKey];
+	    }
+	    if (isset($raw[$this->_moduleKey]) &&
+	    $raw[$this->_moduleKey] != $defaults[$this->_moduleKey] ||
+	    isset($raw[$this->_controllerKey]) &&
+	    $raw[$this->_controllerKey] != $defaults[$this->_controllerKey]) {
+	        if (!isset($raw[$this->_actionKey])) {
+	            $final[$this->_actionKey] = $this->_defaults[$this->_actionKey];
+	        }
+	    }
+    }
+
+    /**
+     * Check for eventually non existing module<->controller and controller<->action
+     * combinations and fix them. Also removes controller/action when it's default.
+     *
+     * @param array $final
+     * @param array $raw
+     * @param array $defaults
+     */
+    protected function _checkOutgoingMcaCombinations(&$final, $raw, $defaults)
+    {
+        if (isset($final[$this->_moduleKey]) &&
+        !isset($final[$this->_controllerKey]) &&
+        isset($raw[$this->_controllerKey]) &&
+        $raw[$this->_controllerKey] != $defaults[$this->_controllerKey]) {
+            // We don't know if the current default controller actually exists in this module
+            $final[$this->_controllerKey] = $raw[$this->_controllerKey];
+        }
+        if (isset($final[$this->_controllerKey]) &&
+        !isset($final[$this->_actionKey]) &&
+        isset($raw[$this->_actionKey]) &&
+        $raw[$this->_actionKey] != $defaults[$this->_actionKey]) {
+            // We don't know if the current default action actually exists in this controller
+            $final[$this->_actionKey] = $raw[$this->_actionKey];
+        }
+
+        // Remove controller and action when they equal their defaults as
+        // this will be fixed in _checkIncomingMcaCombinations()
+        if (isset($final[$this->_controllerKey]) &&
+        $final[$this->_controllerKey] == $defaults[$this->_controllerKey]) {
+            unset($final[$this->_controllerKey]);
+        }
+        if (isset($final[$this->_actionKey]) &&
+        $final[$this->_actionKey] == $defaults[$this->_actionKey]) {
+            unset($final[$this->_actionKey]);
+        }
     }
 
     /**
