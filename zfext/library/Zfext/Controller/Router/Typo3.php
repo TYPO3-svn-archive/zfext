@@ -322,11 +322,38 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
             unset($globalParams['id']);
         }
 
-        $globalParams[$prefixId] = array_diff($localParams, $this->_getPageDefaults($altPageId));
+        $globalParams[$prefixId] = $this->_arrayDiff($localParams, $this->_getPageDefaults($altPageId));
 
         $this->_plugin->pi_linkTP('|', $globalParams, $cache, $altPageId);
 
         return $this->_plugin->cObj->lastTypoLinkUrl;
+    }
+
+    /**
+     * Returns an array with all values from left that are not in right or
+     * don't equal those in right (array_diff pretends to do that but in
+     * fact it does in 5.2 on win and on 5.3 in unix it removes entries
+     * which values are the same but not the keys - no time to investigate
+     * that further)
+     *
+     * @param array $left
+     * @param array $right
+     * @return array
+     */
+    protected function _arrayDiff($left, $right)
+    {
+        $diff = array();
+        foreach ($right as $key => $value) {
+            if (array_key_exists($key, $left) && $left[$key] != $value) {
+                $diff[$key] = $left[$key];
+            }
+        }
+        foreach ($left as $key => $value) {
+            if (!array_key_exists($key, $right)) {
+                $diff[$key] = $value;
+            }
+        }
+        return $diff;
     }
 
     /**
