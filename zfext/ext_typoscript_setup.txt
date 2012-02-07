@@ -11,4 +11,5 @@ plugin.tx_zfext.zfext {
 	resources.db.adapter = TYPO3
 	resources.translate.adapter = Zfext_Translate_Adapter_Typo3
 	resources.translate.data = default
+	resources.translate.disableNotices = 1
 }
