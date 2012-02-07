@@ -55,6 +55,7 @@ class Zfext_ExtMgm
 		'type' => 'list_type',
 		'cached' => false,
 		'controllerDirectory' => 'controllers',
+	    'modulesDirectory' => false,
 		'modules' => false
 	);
 
@@ -261,11 +262,15 @@ class Zfext_ExtMgm
 
 		$dir = trim(str_replace('\\', '/', $options['directory']), "/");
 		$setup .= 'resources.frontcontroller.';
-		if ($options['modules']) {
+		if ($options['modules'] && !$options['moduleDirectory']) {
 			$setup .= 'moduledirectory = EXT:'.$extKey.'/'.$dir;
 		}else{
 			$cDir = trim(str_replace('\\', '/', $options['controllerDirectory']), "/");
 			$setup .= 'controllerdirectory = EXT:'.$extKey.'/'.$dir.'/'.$cDir;
+		    if ($options['moduleDirectory']) {
+		        $mDir = is_string($options['moduleDirectory']) ? trim(str_replace('\\', '/', $options['moduleDirectory']), "/") : 'modules';
+			    $setup .= "\nresources.frontcontroller.moduledirectory = EXT:".$extKey.'/'.$dir.'/'.$mDir;
+		    }
 		}
 
 		if (!empty($options['defaultModule'])) {

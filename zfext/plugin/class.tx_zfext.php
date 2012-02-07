@@ -1,7 +1,7 @@
 <?php
 /**
  * Zfext - Zend Framework for TYPO3
- * 
+ *
  * LICENSE
  *
  * This script is part of the TYPO3 project. The TYPO3 project is
@@ -19,7 +19,7 @@
  * GNU General Public License for more details.
  *
  * This copyright notice MUST APPEAR in all copies of the script!
- * 
+ *
  * @copyright  Copyright (c) 2010 Christian Opitz - Netzelf GbR (http://netzelf.de)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU General Public License
  * @version    $Id$
@@ -40,24 +40,24 @@ class tx_zfext extends tslib_pibase
 	public $prefixId	  = 'tx_zfext';
 	public $scriptRelPath = 'pi1/class.tx_zfext_pi1.php';	// Path to this script relative to the extension dir.
 	public $extKey        = 'zfext';	// The extension key.
-	
+
 	/**
 	 * @var array Holds the setup of the current extension
 	 * @see $selfConf
 	 */
 	public $conf = array();
-	
+
 	/**
 	 * @var array Respones are held here on plugin level and retrieved when a special response segment is required
 	 */
 	protected static $_responseRegister = array();
-	
+
 	/**
-	 * We override the constructor and call it later from setup 
+	 * We override the constructor and call it later from setup
 	 * because we have to set the prefixId before
 	 */
 	public function __construct() {}
-	
+
 	/**
 	 * The main method of the PlugIn
 	 *
@@ -68,7 +68,7 @@ class tx_zfext extends tslib_pibase
 	public function main($content, $conf)
 	{
 		$this->setupPlugin($conf);
-		
+
 		$responseSegment = 'default';
 		if (!empty($conf['zfext.']['responseSegment'])) {
 			$responseSegment = $conf['zfext.']['responseSegment'];
@@ -76,51 +76,51 @@ class tx_zfext extends tslib_pibase
 				$responseSegment = false;
 			}
 		}
-		
+
 		if (isset(self::$_responseRegister[$this->prefixId])) {
 		    $response = self::$_responseRegister[$this->prefixId];
 		}else{
 			$this->setConf($conf);
-			
-			set_error_handler(array($this, 'errorHandler'), E_ALL ^ E_NOTICE ^ E_WARNING);
-			
+
+			set_error_handler(array($this, 'errorHandler'), $GLOBALS['TYPO3_CONF_VARS']['SYS']['exceptionalErrors']);
+
 			Zfext_ExtMgm::loadLibrary('zfext');
-			
+
 			Zfext_ExtMgm::loadLibrary($this->extKey);
 		    Zfext_Plugin::setInstance($this);
-					
+
 			$application = new Zend_Application(
 				t3lib_extMgm::extPath($this->extKey).'pi1',
 				$this->extractOptions($this->conf['zfext.'])
 			);
 			$application->bootstrap()->run();
-			
+
 			restore_error_handler();
-			
+
 			$response = Zend_Controller_Front::getInstance()->getResponse();
 			self::$_responseRegister[$this->prefixId] = $response;
 		}
-		
-	    
+
+
 		$layout = Zend_Layout::getMvcInstance();
 		if (!in_array($responseSegment, array('default', false)) && $layout->isEnabled()) {
 		    $content = $layout->$responseSegment;
 		}else{
 			$content = $response->getBody($responseSegment);
 		}
-		
+
 		return $this->pi_wrapInBaseClass($content);
 	}
-	
+
 	/**
 	 * Detects the prefixId, extKey and $scriptRelPath (latter only points to
 	 * the plugin directory in the hope that nobody needs the script itself)
-	 * 
+	 *
 	 * Detects if this is a USER_INT or USER plugin (sets checkCHash accordingly)
-	 *  
+	 *
 	 * Calls parent constructor and sets default piVars. (LoadLL is not yet
 	 * done here but propably later in the translator adapter)
-	 * 
+	 *
 	 * @param unknown_type $conf
 	 */
 	protected function setupPlugin($conf)
@@ -128,24 +128,24 @@ class tx_zfext extends tslib_pibase
 	    $signature = explode('.', $conf['zfext.']['signature']);
 	    $this->extKey = $signature[0];
 	    $this->prefixId = $signature[1];
-	    
+
 	    $controllerPath = t3lib_div::getFileAbsFileName(
 	    	$conf['zfext.']['resources.']['frontcontroller.']['controllerdirectory.'][$this->prefixId]);
 		$extPath = realpath(t3lib_extMgm::extPath($this->extKey));
 		$this->scriptRelPath = substr($controllerPath, strlen($extPath) + 1);
-	    
+
 	    $type = $GLOBALS['TSFE']->tmpl->setup['plugin.'][$this->prefixId];
-		
+
 		$this->pi_USER_INT_obj = ($type == 'USER_INT');
 		$this->pi_checkCHash = ($type == 'USER');
-		
+
 		parent::tslib_pibase();
 		parent::pi_setPiVarDefaults();
 	}
-	
+
 	/**
 	 * Set config and merge with referenced conf if so
-	 * 
+	 *
 	 * @param array $conf
 	 */
 	protected function setConf($conf)
@@ -160,11 +160,11 @@ class tx_zfext extends tslib_pibase
 		}
 		$this->conf = $conf;
 	}
-	
+
 	protected function parseReferencedTS($ref, $conf)
 	{
 		$parts = explode('.', trim($ref, "\t <"));
-		
+
 		if (count($parts)) {
 			$first = array_shift($parts);
 			if (is_array($GLOBALS['TSFE']->tmpl->setup[$first.'.'])) {
@@ -186,11 +186,11 @@ class tx_zfext extends tslib_pibase
 		}
 		return $conf;
 	}
-	
+
 	/**
 	 * Catch errors and throw an error exception so that ZF can catch it and output
 	 * it neatly with the errorHandler-plugin.
-	 * 
+	 *
 	 * @param integer $errno
 	 * @param string $errstr
 	 * @param string $errfile
@@ -236,11 +236,11 @@ class tx_zfext extends tslib_pibase
 
 		throw new ErrorException($type.': '.$errstr, 0, $errno, $errfile, $errline);
 	}
-	
+
 	/**
-	 * Extracts the options from the TypoScript-Array (removes the dots 
+	 * Extracts the options from the TypoScript-Array (removes the dots
 	 * in the keys and replaces EXT: by the extpath if found in values)
-	 * 
+	 *
 	 * @param array $conf
 	 * @return array
 	 */

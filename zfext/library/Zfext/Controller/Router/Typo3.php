@@ -133,6 +133,10 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
 	    $piVars = (array) $this->_plugin->piVars;
 	    $defaults = $this->_getPageDefaults(0);
 	    $params = array_merge($defaults, $piVars);
+	    if (!empty($GLOBALS['ux_tx_realurl.unmatchedPath'])) {
+	        $fromRealurl = $this->_parsePath($GLOBALS['ux_tx_realurl.unmatchedPath']);
+	        $params = array_merge($params, $fromRealurl);
+	    }
 
 	    $this->_checkIncomingMcaCombinations($params, $piVars, $defaults);
 
