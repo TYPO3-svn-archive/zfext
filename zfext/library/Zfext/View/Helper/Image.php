@@ -1,7 +1,7 @@
 <?php
 /**
  * Zfext - Zend Framework for TYPO3
- * 
+ *
  * LICENSE
  *
  * This script is part of the TYPO3 project. The TYPO3 project is
@@ -19,7 +19,7 @@
  * GNU General Public License for more details.
  *
  * This copyright notice MUST APPEAR in all copies of the script!
- * 
+ *
  * @copyright  Copyright (c) 2010 Christian Opitz - Netzelf GbR (http://netzelf.de)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU General Public License
  * @version    $Id: Bootstrap.php 36506 2010-08-08 15:46:09Z metti $
@@ -28,25 +28,25 @@
 /**
  * Wrapper for TS-imgResource
  * @link http://typo3.org/documentation/document-library/references/doc_core_tsref/4.2.0/view/1/5/#id4164427
- * 
+ *
  * Would be cleaner to have this in Zfext-library but it seems easier to smuggle the
  * helpers in among the include path...
- * 
+ *
  * @category   TYPO3
  * @package    Zend_View
  * @subpackage Helper
  * @author     Christian Opitz <co@netzelf.de>
  */
-class Zend_View_Helper_Image extends Zend_View_Helper_Abstract
+class Zfext_View_Helper_Image extends Zend_View_Helper_Abstract
 {
 	/**
 	 * @var array Image info that comes from TYPO3
 	 */
 	protected $_imageInfo;
-	
+
 	/**
 	 * Calls $cObj->getImgResource and stores image info
-	 * 
+	 *
 	 * @param string $src
 	 * @param array $conf
 	 * @return Zend_View_Helper_Image
@@ -54,7 +54,7 @@ class Zend_View_Helper_Image extends Zend_View_Helper_Abstract
 	public function image($src, $conf = array())
 	{
 		$cObj = Zfext_Plugin::getInstance()->cObj;
-		
+
 		$imageInfo = $cObj->getImgResource($src, $conf);
 		$GLOBALS['TSFE']->lastImageInfo = $imageInfo;
 		if (!is_array($imageInfo)) {
@@ -65,15 +65,15 @@ class Zend_View_Helper_Image extends Zend_View_Helper_Abstract
 		$GLOBALS['TSFE']->imagesOnPage[] = $imageInfo[3];
 
 		$imageInfo[3] = $GLOBALS['TSFE']->absRefPrefix . t3lib_div::rawUrlEncodeFP($imageInfo[3]);
-		
+
 		$this->_imageInfo = $imageInfo;
-		
+
 		return $this;
     }
-    
+
     /**
      * Access the properties of the current image
-     * 
+     *
      * @param string $var
      * @return int|string|NULL
      */
@@ -98,10 +98,10 @@ class Zend_View_Helper_Image extends Zend_View_Helper_Abstract
     			return null;
     	}
     }
-    
+
     /**
      * Output image source
-     * 
+     *
      * @return string
      */
     public function __toString()

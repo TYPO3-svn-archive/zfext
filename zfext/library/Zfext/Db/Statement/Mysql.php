@@ -5,8 +5,8 @@
  * @author    Jenei Viktor Attila
  * @copyright 2010 Jenei Viktor Attila
  * @license   http://www.opensource.org/licenses/lgpl-license.php LGPL
- */ 
- 
+ */
+
 /**
  * @see Zend_Db_Statement
  */
@@ -19,7 +19,7 @@ require_once 'Zend/Db/Statement.php';
  * @package    Zend_Db
  * @subpackage Statement
  */
-class Zend_Db_Statement_Mysql extends Zend_Db_Statement {
+class Zfext_Db_Statement_Mysql extends Zend_Db_Statement {
     var $_prepared_sql = '';
     var $_sqlresult = null;
     var $_columnCount = 0;
@@ -93,7 +93,7 @@ class Zend_Db_Statement_Mysql extends Zend_Db_Statement {
         if ( strlen($this->_prepared_sql) > 0 || $this->_sqlresult) {
             return mysql_errno( $this->_adapter->getConnection() );
         }
-        return false;        
+        return false;
     }
 
     /**
@@ -135,7 +135,7 @@ class Zend_Db_Statement_Mysql extends Zend_Db_Statement {
                 foreach ( $params as &$v ) {
                         $v = ( $v === null ) ? 'NULL' : "'" . mysql_real_escape_string( $v, $this->_adapter->getConnection() ) . "'";
 		}
-		$sql_query = vsprintf( str_replace( "?", "%s", $sql_query ), $params );   
+		$sql_query = vsprintf( str_replace( "?", "%s", $sql_query ), $params );
 	} else {
 		$sql_query = $sql_query;
 	}
@@ -186,7 +186,7 @@ class Zend_Db_Statement_Mysql extends Zend_Db_Statement {
 		break;
 	    case Zend_Db::FETCH_OBJ:
 		$row = mysql_fetch_object( $this->_sqlresult );
-		break; 
+		break;
             case Zend_Db::FETCH_BOUND:
                 $row = mysql_fetch_assoc( $this->_sqlresult );
                 if ( $row !== false ){

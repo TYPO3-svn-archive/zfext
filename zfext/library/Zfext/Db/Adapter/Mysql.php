@@ -25,9 +25,9 @@ require_once 'Zend/Db/Profiler.php';
 require_once 'Zend/Db/Select.php';
 
 /**
- * @see Zend_Db_Statement_Mysqli
+ * @see Zfext_Db_Statement_Mysqli
  */
-require_once 'Zend/Db/Statement/Mysql.php';
+require_once 'Zfext/Db/Statement/Mysql.php';
 
 
 /**
@@ -37,7 +37,7 @@ require_once 'Zend/Db/Statement/Mysql.php';
  * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  */
-class Zend_Db_Adapter_Mysql extends Zend_Db_Adapter_Abstract {
+class Zfext_Db_Adapter_Mysql extends Zend_Db_Adapter_Abstract {
     /**
      * Keys are UPPERCASE SQL datatypes or the constants
      * Zend_Db::INT_TYPE, Zend_Db::BIGINT_TYPE, or Zend_Db::FLOAT_TYPE.
@@ -78,7 +78,7 @@ class Zend_Db_Adapter_Mysql extends Zend_Db_Adapter_Abstract {
      *
      * @var string
      */
-    protected $_defaultStmtClass = 'Zend_Db_Statement_Mysql';
+    protected $_defaultStmtClass = 'Zfext_Db_Statement_Mysql';
 
     /**
      * Quote a raw string.
@@ -273,7 +273,7 @@ class Zend_Db_Adapter_Mysql extends Zend_Db_Adapter_Abstract {
             $this->_config['username'],
             $this->_config['password']
         );
-        
+
         @mysql_selectdb( $this->_config['dbname'], $this->_connection );
 
         $_isConnected = true;
@@ -287,7 +287,7 @@ class Zend_Db_Adapter_Mysql extends Zend_Db_Adapter_Abstract {
         }
 
         if ( !empty( $this->_config['charset'] ) ) {
-            mysql_set_charset( $this->_config['charset'] , $this->_connection ); 
+            mysql_set_charset( $this->_config['charset'] , $this->_connection );
         }
     }
 

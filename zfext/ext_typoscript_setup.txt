@@ -5,10 +5,12 @@ plugin.tx_zfext.zfext {
 	bootstrap.path = EXT:zfext/library/Zfext/Bootstrap.php
 	bootstrap.class = Zfext_Bootstrap
 	pluginpaths.Zfext_Application_Resource = EXT:zfext/library/Zfext/Application/Resource
+	resources.view.helperPath.Zfext_View_Helper = EXT:zfext/library/Zfext/View/Helper
 	resources.errorhandler.enable = 1
 	resources.frontcontroller.plugins.pluginAutoloader = Zfext_Controller_Plugin_Autoloader
 	resources.frontcontroller.plugins.pluginHeadHelpers = Zfext_Controller_Plugin_HeadHelpers
 	resources.db.adapter = TYPO3
+	resources.db.params.adapterNamespace = Zfext_Db_Adapter
 	resources.translate.adapter = Zfext_Translate_Adapter_Typo3
 	resources.translate.data = default
 	resources.translate.disableNotices = 1

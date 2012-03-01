@@ -1,7 +1,7 @@
 <?php
 /**
  * Zfext - Zend Framework for TYPO3
- * 
+ *
  * LICENSE
  *
  * This script is part of the TYPO3 project. The TYPO3 project is
@@ -19,7 +19,7 @@
  * GNU General Public License for more details.
  *
  * This copyright notice MUST APPEAR in all copies of the script!
- * 
+ *
  * @copyright  Copyright (c) 2010 Christian Opitz - Netzelf GbR (http://netzelf.de)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU General Public License
  * @version    $Id$
@@ -31,16 +31,16 @@
  * @subpackage Adapter
  * @author     Christian Opitz <co@netzelf.de>
  */
-class Zend_Db_Adapter_Typo3 extends Zend_Db_Adapter_Mysql
+class Zfext_Db_Adapter_Typo3 extends Zfext_Db_Adapter_Mysql
 {
 	/**
 	 * Constructor.
      *
      * $config is an array of key/value pairs or an instance of Zend_Config
      * containing configuration options.  We have to set some values for
-     * dbname, password, username because 
+     * dbname, password, username because
      * @link Zend_Db_Adapter_Abstract#_checkRequiredOptions gathers them.
-     * 
+     *
 	 * @param array|Zend_Config $config An array or instance of Zend_Config having configuration data
 	 */
 	public function __construct($config)
@@ -52,10 +52,10 @@ class Zend_Db_Adapter_Typo3 extends Zend_Db_Adapter_Mysql
 		$config['dbname'] = 'dummyDbName';
 		$config['password'] = 'dummyDbPassword';
 		$config['username'] = 'dummyDbUsername';
-		
+
 		parent::__construct($config);
 	}
-	
+
 	/* (non-PHPdoc)
 	 * @see Zend_Db_Adapter_Mysql#_connect()
 	 */

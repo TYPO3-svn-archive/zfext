@@ -33,7 +33,7 @@
  * @subpackage Helper
  * @author     Christian Opitz <co@netzelf.de>
  */
-class Zend_View_Helper_CObject extends Zend_View_Helper_Abstract
+class Zfext_View_Helper_CObject extends Zend_View_Helper_Abstract
 {
 	/**
 	 * Renders the TypoScript object in the given TypoScript setup path.
