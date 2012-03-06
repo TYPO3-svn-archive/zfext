@@ -1,8 +1,50 @@
 <?php
+/**
+ * Zfext - Zend Framework for TYPO3
+ *
+ * LICENSE
+ *
+ * This script is part of the TYPO3 project. The TYPO3 project is
+ * free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * The GNU General Public License can be found at
+ * http://www.gnu.org/copyleft/gpl.html.
+ *
+ * This script is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * This copyright notice MUST APPEAR in all copies of the script!
+ *
+ * @copyright  Copyright (c) 2010 Christian Opitz - Netzelf GbR (http://netzelf.de)
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU General Public License
+ * @version    $Id$
+ */
+
+/**
+ * @category   TYPO3
+ * @package    Zend_Db
+ * @subpackage Table
+ * @author     Christian Opitz <co@netzelf.de>
+ */
 class Zfext_Db_Table extends Netzelf_Db_Table
 {
+    /**
+     * Keep information about which table names belong to
+     * which class names here
+     * @var array
+     */
     protected static $_tableToClassNameMap = array();
 
+    /**
+     * Keep information about which class names belong to
+     * which table names here
+     * @var array
+     */
     protected static $_classToTableNameMap = array();
 
     /**
@@ -10,8 +52,18 @@ class Zfext_Db_Table extends Netzelf_Db_Table
      */
     protected static $_tableDefinition;
 
+    /**
+     * Set row class for several TYPO3 specific enhancements
+     * @var string
+     */
     protected $_rowClass = 'Zfext_Db_Table_Row';
 
+    /**
+     * Constructor - automatically create table definition,
+     * cache and pass it to parent
+     *
+     * @throws Zfext_Db_Table_Exception
+     */
     public function __construct()
     {
         if (get_class($this) == __CLASS__) {
@@ -30,6 +82,14 @@ class Zfext_Db_Table extends Netzelf_Db_Table
         parent::__construct(self::$_tableDefinition->getTableConfig($this->_name));
     }
 
+    /**
+     * Find references to and from other tables and create the dependent
+     * tables and reference map array from those
+     *
+     * @todo Add support for MM tables     *
+     * @throws Zfext_Db_Table_Exception
+     * @return array
+     */
     protected function _findReferences()
     {
         $name = $this->_name;
@@ -66,6 +126,12 @@ class Zfext_Db_Table extends Netzelf_Db_Table
                     }
                     $key = ($prefix && substr($foreignTable, 0, $prefixLength) == $prefix) ? substr($foreignTable, $prefixLength) : $foreignTable;
                     $dependentTables[$key] = $class;
+                    $referenceMap[ucfirst($key)] = array(
+                        'columns' => array('uid'),
+                        'refTableClass' => $class,
+                        'refColumns' => array($refColumn),
+                    	'operators' => 'IN'
+                    );
                 } else {
                     continue;
                 }
@@ -76,7 +142,7 @@ class Zfext_Db_Table extends Netzelf_Db_Table
             if ($config['type'] == 'group' && $config['internal_type'] == 'db' && !strpos($config['allowed'], ',')) {
                 $foreignTable = $config['allowed'];
             } elseif ($config['type'] == 'select' && $config['foreign_table']) {
-                $foreignTable = $config['foreignTable'];
+                $foreignTable = $config['foreign_table'];
             } else {
                 continue;
             }
@@ -91,11 +157,18 @@ class Zfext_Db_Table extends Netzelf_Db_Table
             }
             if ($config['maxitems'] > 1) {
                 $dependentTables[$column] = $class;
+                $referenceMap[ucfirst($column).'Reverse'] = array(
+                    'columns' => array($column),
+                    'refTableClass' => $class,
+                    'refColumns' => array('uid'),
+                    'operators' => 'LIKE'
+                );
             } else {
                 $referenceMap[ucfirst($column)] = array(
                     'columns' => array($column),
                     'refTableClass' => $class,
                     'refColumns' => array('uid'),
+                    'operators' => 'IN'
                 );
             }
         }
@@ -149,6 +222,13 @@ class Zfext_Db_Table extends Netzelf_Db_Table
         return $tableName;
     }
 
+    /**
+     * Reverse method of _findTableName()
+     *
+     * @param string $tableName
+     * @throws Zfext_Db_Table_Exception
+     * @return string
+     */
     protected function _findTableClassName($tableName)
     {
         if (isset(self::$_tableToClassNameMap[$tableName])) {

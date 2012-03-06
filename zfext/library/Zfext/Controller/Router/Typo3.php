@@ -133,8 +133,12 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
 	    $piVars = (array) $this->_plugin->piVars;
 	    $defaults = $this->_getPageDefaults(0);
 	    $params = array_merge($defaults, $piVars);
-	    if (!empty($GLOBALS['ux_tx_realurl.unmatchedPath'])) {
-	        $fromRealurl = $this->_parsePath($GLOBALS['ux_tx_realurl.unmatchedPath']);
+	    if (!empty($_GET['tx_zfext']['path'])) {
+	        $fromRealurl = $this->_parsePath($_GET['tx_zfext']['path']);
+	        unset($_GET['tx_zfext']['path']);
+	        if (!count($_GET['tx_zfext'])) {
+	            unset($_GET['tx_zfext']);
+	        }
 	        $params = array_merge($params, $fromRealurl);
 	    }
 
@@ -168,18 +172,27 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
         $values = array();
         $params = array();
 	    $path = explode('/', trim($path, '/'));
+        $request = new Zend_Controller_Request_Simple();
 
         if ($this->_dispatcher && $this->_dispatcher->isValidModule($path[0])) {
-            $values[$this->_moduleKey] = array_shift($path);
+            $request->setModuleName(array_shift($path));
+            $values[$this->_moduleKey] = $request->getModuleName();
             $this->_moduleValid = true;
         }
 
         if (count($path) && !empty($path[0])) {
-            $values[$this->_controllerKey] = array_shift($path);
+            $request->setControllerName($path[0]);
+            if ($this->_dispatcher->isDispatchable($request)) {
+                $values[$this->_controllerKey] = array_shift($path);
+            }
         }
 
         if (count($path) && !empty($path[0])) {
-            $values[$this->_actionKey] = array_shift($path);
+            $request->setActionName($path[0]);
+            if ($this->_dispatcher instanceof Zfext_Controller_Dispatcher_Plugin &&
+                $this->_dispatcher->isDispatchable($request)) {
+                $values[$this->_actionKey] = array_shift($path);
+            }
         }
 
         if ($numSegs = count($path)) {

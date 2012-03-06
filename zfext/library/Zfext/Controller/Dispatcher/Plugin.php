@@ -1,7 +1,7 @@
 <?php
 /**
  * Zfext - Zend Framework for TYPO3
- * 
+ *
  * LICENSE
  *
  * This script is part of the TYPO3 project. The TYPO3 project is
@@ -19,7 +19,7 @@
  * GNU General Public License for more details.
  *
  * This copyright notice MUST APPEAR in all copies of the script!
- * 
+ *
  * @copyright  Copyright (c) 2010 Christian Opitz - Netzelf GbR (http://netzelf.de)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU General Public License
  * @version    $Id$
@@ -31,11 +31,11 @@
  * Tx_MyExt_Module_IndexController or
  * Tx_MyExt_Suffix_Module_IndexController or
  * Tx_MyExt_IndexController ...
- * 
+ *
  * The trick is to override the 'prefixDefaultModule'-param to force the standard
  * dispatcher to call the formatClassName-method which is overridden too and
  * serves the right class names.
- * 
+ *
  * @category   TYPO3
  * @package    Zfext_Controller
  * @subpackage Dispatcher
@@ -47,7 +47,7 @@ class Zfext_Controller_Dispatcher_Plugin extends Zend_Controller_Dispatcher_Stan
 	 * @var boolean The real param
 	 */
 	protected $_prefixDefaultModule = false;
-	
+
 	/* (non-PHPdoc)
 	 * @see Controller/Dispatcher/Zend_Controller_Dispatcher_Abstract#setParam()
 	 */
@@ -71,7 +71,7 @@ class Zfext_Controller_Dispatcher_Plugin extends Zend_Controller_Dispatcher_Stan
 		$params['prefixDefaultModule'] = true;
 		return parent::setParams($params);
     }
-	
+
 	/* (non-PHPdoc)
 	 * @see Controller/Dispatcher/Zend_Controller_Dispatcher_Standard#formatClassName()
 	 */
@@ -80,18 +80,18 @@ class Zfext_Controller_Dispatcher_Plugin extends Zend_Controller_Dispatcher_Stan
 		if ($moduleName == 'zfext') {
 			return 'Tx_Zfext_'.$className;
 		}
-		
+
 		$formatedClass = Zfext_ExtMgm::getPluginNamespace(Zfext_Plugin::getInstance()->prefixId);
-		
+
 		if ($this->_defaultModule != $moduleName || $this->_prefixDefaultModule) {
 			$formatedClass .= '_'.$this->formatModuleName($moduleName);
 		}
-		
+
 		$formatedClass .= '_'.$className;
-		
+
 		return $formatedClass;
 	}
-	
+
 	/* (non-PHPdoc)
 	 * @see Controller/Dispatcher/Zend_Controller_Dispatcher_Standard#classToFilename()
 	 */
@@ -100,4 +100,34 @@ class Zfext_Controller_Dispatcher_Plugin extends Zend_Controller_Dispatcher_Stan
 	    $parts = explode('_', $class);
 	    return array_pop($parts).'.php';
 	}
+
+    /* (non-PHPdoc)
+     * @see Zend_Controller_Dispatcher_Standard::isDispatchable()
+     */
+    public function isDispatchable(Zend_Controller_Request_Abstract $request)
+    {
+        $className = $this->getControllerClass($request);
+        if (!$className) {
+            return false;
+        }
+
+        $finalClass  = $className;
+        if (($this->_defaultModule != $this->_curModule)
+            || $this->getParam('prefixDefaultModule'))
+        {
+            $finalClass = $this->formatClassName($this->_curModule, $className);
+        }
+        if (!class_exists($finalClass, false)) {
+            $fileSpec    = $this->classToFilename($className);
+            $dispatchDir = $this->getDispatchDirectory();
+            $test        = $dispatchDir . DIRECTORY_SEPARATOR . $fileSpec;
+            try {
+                return Zend_Loader::isReadable($test);
+            } catch (Exception $e) {
+                return false;
+            }
+        }
+        $method = $this->getActionMethod($request);
+        return method_exists($finalClass, $this->getActionMethod($request));
+    }
 }

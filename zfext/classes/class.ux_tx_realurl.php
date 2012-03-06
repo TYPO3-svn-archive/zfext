@@ -48,7 +48,10 @@ class ux_tx_realurl extends tx_realurl
         $this->extConf['init']['postVarSet_failureMode'] = 'ignore';
         $result = parent::decodeSpURL_settingPostVarSets($pathParts, $postVarSetCfg);
         // @see Zfext_Controller_Router_Typo3::route()
-        $GLOBALS['ux_tx_realurl.unmatchedPath'] = implode('/', $pathParts);
+        $result = t3lib_div::array_merge_recursive_overrule(
+            (array) $result,
+        	array('tx_zfext' => array('path' => implode('/', $pathParts)))
+        );
         $pathParts = array();
         return $result;
     }
