@@ -133,13 +133,15 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
 	    $piVars = (array) $this->_plugin->piVars;
 	    $defaults = $this->_getPageDefaults(0);
 	    $params = array_merge($defaults, $piVars);
-	    if (!empty($_GET['tx_zfext']['path'])) {
-	        $fromRealurl = $this->_parsePath($_GET['tx_zfext']['path']);
+	    if (isset($_GET['tx_zfext']['path'])) {
+	        if (!empty($_GET['tx_zfext']['path'])) {
+    	        $fromRealurl = $this->_parsePath($_GET['tx_zfext']['path']);
+    	        $params = array_merge($params, $fromRealurl);
+	        }
 	        unset($_GET['tx_zfext']['path']);
 	        if (!count($_GET['tx_zfext'])) {
 	            unset($_GET['tx_zfext']);
 	        }
-	        $params = array_merge($params, $fromRealurl);
 	    }
 
 	    $this->_checkIncomingMcaCombinations($params, $piVars, $defaults);
@@ -184,6 +186,8 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
             $request->setControllerName($path[0]);
             if ($this->_dispatcher->isDispatchable($request)) {
                 $values[$this->_controllerKey] = array_shift($path);
+            } else {
+                $request->setControllerName($this->_dispatcher->getDefaultControllerName());
             }
         }
 

@@ -121,11 +121,10 @@ class Zfext_Controller_Dispatcher_Plugin extends Zend_Controller_Dispatcher_Stan
             $fileSpec    = $this->classToFilename($className);
             $dispatchDir = $this->getDispatchDirectory();
             $test        = $dispatchDir . DIRECTORY_SEPARATOR . $fileSpec;
-            try {
-                return Zend_Loader::isReadable($test);
-            } catch (Exception $e) {
+            if (!Zend_Loader::isReadable($test)) {
                 return false;
             }
+            Zend_Loader::loadFile($test);
         }
         $method = $this->getActionMethod($request);
         return method_exists($finalClass, $this->getActionMethod($request));

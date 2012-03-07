@@ -14,4 +14,6 @@ $TYPO3_CONF_VARS['FE']['eID_include']['zfext'] = 'EXT:zfext/plugin/index.php';
 $GLOBALS['TYPO3_CONF_VARS']['FE']['XCLASS']['tslib/class.tslib_feuserauth.php'] = t3lib_extMgm::extPath($_EXTKEY).'classes/class.ux_tslib_feUserAuth.php';
 
 $GLOBALS['TYPO3_CONF_VARS']['FE']['XCLASS']['ext/realurl/class.tx_realurl.php'] = t3lib_extMgm::extPath($_EXTKEY).'classes/class.ux_tx_realurl.php';
+
+$TYPO3_CONF_VARS['SC_OPTIONS']['tslib/class.tslib_fe.php']['isOutputting'][] = 'EXT:zfext/classes/class.tx_zfext_hooks.php:tx_zfext_hooks->isOutputting';
 ?>

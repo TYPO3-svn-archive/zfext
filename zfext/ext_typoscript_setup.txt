@@ -5,6 +5,7 @@ plugin.tx_zfext.zfext {
 	bootstrap.path = EXT:zfext/library/Zfext/Bootstrap.php
 	bootstrap.class = Zfext_Bootstrap
 	pluginpaths.Zfext_Application_Resource = EXT:zfext/library/Zfext/Application/Resource
+	resources.view.helperPath.Netzelf_View_Helper = EXT:zfext/library/Netzelf/View/Helper
 	resources.view.helperPath.Zfext_View_Helper = EXT:zfext/library/Zfext/View/Helper
 	resources.errorhandler.enable = 1
 	resources.frontcontroller.plugins.pluginAutoloader = Zfext_Controller_Plugin_Autoloader

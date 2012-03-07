@@ -29,30 +29,54 @@
  * Extend realurl to allow dynamic post var sets without configuration
  *
  * @todo Find out, if this works with older versions of realurl than 1.9.4
- * @todo Find a way to trigger 404-error when there are unmatched post vars and
- * 		 there's no zfext-plugin on the current page or it doesn't match either
  *
  * @author Christian Opitz <co@netzelf.de>
  */
 class ux_tx_realurl extends tx_realurl
 {
-    protected $_failureMode = null;
+    /**
+     * @var ux_tx_realurl
+     */
+    protected static $instance;
 
-    protected $_unmatchedPathParts = null;
+    public function __construct() {
+        self::$instance = $this;
+    }
+
+    /**
+     * Is the request a 404 error? (Unmatched postVars and
+     * Zfext_Controller_Router_Typo3::route() not invoked)
+     *
+     * @return boolean
+     */
+    public static function is404()
+    {
+        // Zfext_Controller_Router_Typo3::route() unsets the path when it finds it
+        // so we can assume that zfext wasn't invoked at all and the request is 404
+        if (isset($_GET['tx_zfext']['path']) && self::$instance->extConf['init']['postVarSet_failureMode'] != 'ignore') {
+            $path = explode('/', $_GET['tx_zfext']['path']);
+            self::$instance->decodeSpURL_throw404('Segment "'.array_shift($path). '" was not a keyword for a postVarSet as expected!');
+            return true;
+        }
+        return false;
+    }
 
     /* (non-PHPdoc)
      * @see tx_realurl::decodeSpURL_settingPostVarSets()
      */
     protected function decodeSpURL_settingPostVarSets(&$pathParts, $postVarSetCfg) {
-        $this->_failureMode = $this->extConf['init']['postVarSet_failureMode'];
+        $failureMode = $this->extConf['init']['postVarSet_failureMode'];
         $this->extConf['init']['postVarSet_failureMode'] = 'ignore';
         $result = parent::decodeSpURL_settingPostVarSets($pathParts, $postVarSetCfg);
         // @see Zfext_Controller_Router_Typo3::route()
-        $result = t3lib_div::array_merge_recursive_overrule(
-            (array) $result,
-        	array('tx_zfext' => array('path' => implode('/', $pathParts)))
-        );
-        $pathParts = array();
+        if (count($pathParts)) {
+            $result = t3lib_div::array_merge_recursive_overrule(
+                (array) $result,
+            	array('tx_zfext' => array('path' => implode('/', $pathParts)))
+            );
+            $pathParts = array();
+        }
+        $this->extConf['init']['postVarSet_failureMode'] = $failureMode;
         return $result;
     }
 
