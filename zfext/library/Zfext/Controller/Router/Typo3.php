@@ -176,6 +176,10 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
 	    $path = explode('/', trim($path, '/'));
         $request = new Zend_Controller_Request_Simple();
 
+        if (!count($path) || !$path[0]) {
+            return array();
+        }
+
         if ($this->_dispatcher && $this->_dispatcher->isValidModule($path[0])) {
             $request->setModuleName(array_shift($path));
             $values[$this->_moduleKey] = $request->getModuleName();
@@ -494,7 +498,7 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
     {
         if (!$this->_pageDefaults) {
             $where = 'deleted = 0 AND hidden=0 AND CType=\'list\' AND ';
-            $where .= 'list_type = \''.$this->_plugin->cObj->getFieldVal('list_type').'\' AND select_key <> \'\'';
+            $where .= 'list_type = \''.$this->_plugin->cObj->getFieldVal('list_type').'\'';// AND select_key <> \'\'';
 
             if (strlen($this->_plugin->cObj->getFieldVal('select_key'))) {
     	    	$path = $this->_plugin->cObj->getFieldVal('select_key');
