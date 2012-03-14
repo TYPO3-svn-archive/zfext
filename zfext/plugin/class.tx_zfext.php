@@ -50,7 +50,7 @@ class tx_zfext extends tslib_pibase
 	/**
 	 * @var array Respones are held here on plugin level and retrieved when a special response segment is required
 	 */
-	protected static $_responseRegister = array();
+	protected static $_responseRegistry = array();
 
 	/**
 	 * We override the constructor and call it later from setup
@@ -77,8 +77,8 @@ class tx_zfext extends tslib_pibase
 			}
 		}
 
-		if (isset(self::$_responseRegister[$this->prefixId])) {
-		    $response = self::$_responseRegister[$this->prefixId];
+		if (isset(self::$_responseRegistry[$this->prefixId])) {
+		    $response = self::$_responseRegistry[$this->prefixId];
 		}else{
 			$this->setConf($conf);
 
@@ -98,7 +98,9 @@ class tx_zfext extends tslib_pibase
 			restore_error_handler();
 
 			$response = Zend_Controller_Front::getInstance()->getResponse();
-			self::$_responseRegister[$this->prefixId] = $response;
+			if (!in_array(Zend_Controller_Front::getInstance()->getParam('keepResponse'), array(0, '0', false, 'false'), true)) {
+			    self::$_responseRegistry[$this->prefixId] = $response;
+			}
 		}
 
 
