@@ -126,6 +126,10 @@ class Zfext_Controller_Dispatcher_Plugin extends Zend_Controller_Dispatcher_Stan
             }
             Zend_Loader::loadFile($test);
         }
+        if (!$request->getActionName()) {
+            // Assume that check is not for action
+            return true;
+        }
         $method = $this->getActionMethod($request);
         return method_exists($finalClass, $this->getActionMethod($request));
     }

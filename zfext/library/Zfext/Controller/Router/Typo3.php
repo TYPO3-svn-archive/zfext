@@ -44,12 +44,6 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
 	 */
 	protected $_plugin;
 
-	/**
-	 * The select keys from tt_content records with this plugin
-	 * @var array
-	 */
-	protected $_selectKeys;
-
     /**#@+
      * Array keys to use for module, controller, and action. Should be taken out of request.
      * @var string
@@ -93,6 +87,7 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
 	    $this->_dispatcher = $front->getDispatcher();
 	    $this->_request = $request;
 	    $this->_plugin = $plugin;
+	    $this->_pageDefaults = null;
 
         $this->_moduleKey     = $this->_request->getModuleKey();
         $this->_controllerKey = $this->_request->getControllerKey();
