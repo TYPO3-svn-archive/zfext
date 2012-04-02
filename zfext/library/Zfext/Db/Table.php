@@ -161,7 +161,7 @@ class Zfext_Db_Table extends Netzelf_Db_Table
                     'columns' => array($column),
                     'refTableClass' => $class,
                     'refColumns' => array('uid'),
-                    'operators' => 'LIKE'
+                    'operators' => 'CONTAINS'
                 );
             } else {
                 $referenceMap[ucfirst($column)] = array(
