@@ -467,7 +467,6 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
             )
         );
 
-
         $allPageDefaults = $this->_getPageDefaults();
         foreach ($lookUp as $i => $values) {
             foreach ($allPageDefaults as $pid => $defaults) {
