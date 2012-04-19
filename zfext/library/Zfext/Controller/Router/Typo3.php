@@ -130,7 +130,7 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
 	    $params = array_merge($defaults, $piVars);
 	    if (isset($_GET['tx_zfext']['path'])) {
 	        if (!empty($_GET['tx_zfext']['path'])) {
-    	        $fromRealurl = $this->_parsePath($_GET['tx_zfext']['path']);
+    	        $fromRealurl = $this->_parsePath($_GET['tx_zfext']['path'], $params);
     	        $params = array_merge($params, $fromRealurl);
 	        }
 	        unset($_GET['tx_zfext']['path']);
@@ -164,12 +164,16 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
 	 * @param string $path
 	 * @return array
 	 */
-	protected function _parsePath($path)
+	protected function _parsePath($path, $defaults = null)
 	{
         $values = array();
         $params = array();
 	    $path = explode('/', trim($path, '/'));
         $request = new Zend_Controller_Request_Simple();
+        
+        if (!is_array($defaults)) {
+            $defaults = $this->_defaults;
+        }
 
         if (!count($path) || !$path[0]) {
             return array();
@@ -186,7 +190,7 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
             if ($this->_dispatcher->isDispatchable($request)) {
                 $values[$this->_controllerKey] = array_shift($path);
             } else {
-                $request->setControllerName($this->_dispatcher->getDefaultControllerName());
+                $request->setControllerName($defaults[$this->_controllerKey]);
             }
         }
 
