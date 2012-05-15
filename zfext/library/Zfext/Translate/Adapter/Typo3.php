@@ -1,7 +1,7 @@
 <?php
 /**
  * Zfext - Zend Framework for TYPO3
- * 
+ *
  * LICENSE
  *
  * This script is part of the TYPO3 project. The TYPO3 project is
@@ -19,7 +19,7 @@
  * GNU General Public License for more details.
  *
  * This copyright notice MUST APPEAR in all copies of the script!
- * 
+ *
  * @copyright  Copyright (c) 2010 Christian Opitz - Netzelf GbR (http://netzelf.de)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU General Public License
  * @version    $Id$
@@ -33,15 +33,39 @@
  */
 class Zfext_Translate_Adapter_Typo3 extends Zend_Translate_Adapter
 {
-    protected $_loadedPlugins = array();
-    
+    protected $_loadedFiles = array();
+
     protected $_dataCharsets = array();
-    
+
     protected $_langKeys;
-    
+
+    public function translate($messageId, $locale = null)
+    {
+        if (substr($messageId, 0, 4) === 'LLL:') {
+            $myLocale = $locale;
+            if ($myLocale === null) {
+                $myLocale = $this->_options['locale'];
+            }
+            if (!Zend_Locale::isLocale($myLocale, true, false)) {
+                $myLocale = new Zend_Locale($myLocale);
+            }
+            $myLocale = (string) $myLocale;
+
+            $parts = explode(':', substr($messageId, 4));
+            $messageId = array_pop($parts);
+            $file = implode(':', $parts);
+            if (!array_key_exists($myLocale.':'.$file, $this->_loadedFiles)) {
+                $this->addTranslation($file, $myLocale);
+                $this->_loadedFiles[$myLocale.':'.$file] = true;
+            }
+        }
+
+        return parent::translate($messageId, $locale);
+    }
+
     /**
      * Load translation data
-     * 
+     *
      * @param  mixed              $data
      * @param  string|Zend_Locale $locale
      * @param  array              $options (optional)
@@ -50,7 +74,7 @@ class Zfext_Translate_Adapter_Typo3 extends Zend_Translate_Adapter
     protected function _loadTranslationData($data, $locale, array $options = array())
     {
         $langKeys = array(current(explode('_', $locale)));
-        
+
         // Look up alternative languages and setup routing:
         if ($GLOBALS['TSFE']->config['config']['language_alt'])	{
             $langKeys[] = $GLOBALS['TSFE']->config['config']['language_alt'];
@@ -62,24 +86,24 @@ class Zfext_Translate_Adapter_Typo3 extends Zend_Translate_Adapter
 		    $route = array($langKeys[0] => 'en');
 		}
         $this->setOptions(array('route' =>$route));
-		
+
         // Try to load the configured files
         if ($data === 'default') {
             $paths = array('locallang.xml');
         }elseif(is_string($data)) {
-            $paths = array($paths);
+            $paths = array($data);
         }elseif(is_array($data)) {
             $paths = $data;
         }else{
             throw new Zfext_Exception('No valid translation data provided');
         }
-        
+
         $plugin = Zfext_Plugin::getInstance();
         $rootPath = t3lib_extMgm::extPath($plugin->extKey);
-        $translationData = array();        
-        
+        $translationData = array();
+
         foreach ($paths as $path) {
-            $basePath = $rootPath.ltrim($path, '\\/');
+            $basePath = substr($path, 0, 3) === 'EXT' ? $path : $rootPath.ltrim($path, '\\/');
             foreach ($langKeys as $langKey) {
 		        $translationData = array_merge(
 		            $translationData,
@@ -87,7 +111,7 @@ class Zfext_Translate_Adapter_Typo3 extends Zend_Translate_Adapter
 		        );
             }
         }
-        
+
 		// Overlaying labels from TypoScript (including fictitious language keys for non-system languages!):
 		if (is_array($plugin->conf['_LOCAL_LANG.']))	{
 			reset($plugin->conf['_LOCAL_LANG.']);
@@ -110,7 +134,7 @@ class Zfext_Translate_Adapter_Typo3 extends Zend_Translate_Adapter
 				}
 			}
 		}
-		
+
 		// Merge 'default' keys to english as Zend_Translate doesn't
 		// accept 'default' as locale
 		if (array_key_exists('default', $translationData)) {
@@ -124,15 +148,15 @@ class Zfext_Translate_Adapter_Typo3 extends Zend_Translate_Adapter
 		    }
 		    unset($translationData['default']);
 		}
-		
+
 		// When $locale was full qualified, provide it:
 		if ($langKeys[0] != $locale) {
 		    $translationData[$locale] = (array) $translationData[$langKeys[0]];
 		}
-		
+
 		return $translationData;
     }
-    
+
     /**
      * Returns the adapter name
      *

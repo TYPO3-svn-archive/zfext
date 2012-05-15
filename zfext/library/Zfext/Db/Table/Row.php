@@ -98,10 +98,46 @@ class Zfext_Db_Table_Row extends Netzelf_Db_Table_Row
         		    }
         		}
                 break;
+            case $config['type'] == 'input' && ($config['eval'] == 'date' || $config['eval'] == 'datetime'):
+                if ($value) {
+                    $value = new Netzelf_Date($value);
+                    $value->setDefaultFormat($config['eval'] == 'datetime' ? Zend_Locale_Format::getDateTimeFormat() : Zend_Locale_Format::getDateFormat());
+                } else {
+                    $value = null;
+                }
+                break;
         }
         if ($config['maxitems'] < 2 && is_array($value)) {
             $value = implode(',', $value);
         }
         return $this->_cacheSet($cacheKey, $value);
+    }
+
+    /* (non-PHPdoc)
+     * @see Netzelf_Db_Table_Row::__set()
+     */
+    public function __set($columnName, $value)
+    {
+        $this->__get($columnName);
+        $columnName = $this->_transformColumn($columnName);
+        if (array_key_exists($columnName, $this->_overloaded) && $this->_overloaded[$columnName] == 'getReference') {
+            throw new Zfext_Db_Table_Exception('Can not (yet) set values on references');
+        }
+        /* if (method_exists($this, $method = 'set'.ucfirst($columnName))) {
+            $this->{$method}($value);
+            return;
+        } */
+
+        $tableName = $this->getTable()->info('name');
+        t3lib_div::loadTCA($tableName);
+        $config = $GLOBALS['TCA'][$tableName]['columns'][$columnName]['config'];
+        switch (true) {
+            case $config['type'] == 'input' && ($config['eval'] == 'date' || $config['eval'] == 'datetime') && $value:
+                $date = new Zend_Date($value);
+                $value = $date->toString('U');
+                break;
+        }
+
+        parent::__set($columnName, $value);
     }
 }

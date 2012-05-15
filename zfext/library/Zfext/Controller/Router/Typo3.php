@@ -170,7 +170,7 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
         $params = array();
 	    $path = explode('/', trim($path, '/'));
         $request = new Zend_Controller_Request_Simple();
-        
+
         if (!is_array($defaults)) {
             $defaults = $this->_defaults;
         }
@@ -334,13 +334,14 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
             unset($globalParams['id']);
         }
 
-        $finalParams = $this->_arrayDiff($localParams, $this->_getPageDefaults($altPageId));
-        $this->_checkOutgoingMcaCombinations($finalParams, $localParams, $this->_defaults);
+        $defaults = $this->_getPageDefaults($altPageId);
+        $finalParams = $this->_arrayDiff($localParams, $defaults);
+        $this->_checkOutgoingMcaCombinations($finalParams, $localParams, $defaults);
         $globalParams[$prefixId] = $finalParams;
 
         $this->_plugin->pi_linkTP('|', $globalParams, $cache, $altPageId);
 
-        return $this->_plugin->cObj->lastTypoLinkUrl;
+        return rtrim($this->_request->getBaseUrl(), '/').'/'.ltrim($this->_plugin->cObj->lastTypoLinkUrl, '/');
     }
 
     /**
