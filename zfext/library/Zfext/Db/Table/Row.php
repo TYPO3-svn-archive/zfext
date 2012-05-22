@@ -92,7 +92,10 @@ class Zfext_Db_Table_Row extends Netzelf_Db_Table_Row
         		foreach ($value as $i => $v) {
         		    foreach ($selItems as $item) {
         		        if ($item[1] == $v) {
-        		            $value[$i] = $item[0];
+        		            $value[$i] = new Netzelf_Object(array(
+        		            	'data' => array('value' => $item[0], 'key' => $item[1]),
+        		                'toStringKey' => 'key'
+        		            ));
         		            break;
         		        }
         		    }
@@ -108,7 +111,7 @@ class Zfext_Db_Table_Row extends Netzelf_Db_Table_Row
                 break;
         }
         if ($config['maxitems'] < 2 && is_array($value)) {
-            $value = implode(',', $value);
+            $value = array_shift($value);
         }
         return $this->_cacheSet($cacheKey, $value);
     }

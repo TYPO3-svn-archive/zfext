@@ -155,6 +155,8 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
 	        $request->setParam($param, $value);
 	    }
 
+	    $this->_defaults = array_merge($this->_defaults, $params);
+
 		return $request;
 	}
 
@@ -314,15 +316,14 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
             $getParams = $_GET;
             unset($getParams[$prefixId], $getParams['id'],$getParams['eID'], $getParams['tx_zfext']);
             $globalParams = $this->_mergeParams($getParams, $globalParams);
-            $localParams = $this->_mergeParams((array) $this->_plugin->piVars, $localParams);
-
+            $localParams = $this->_mergeParams($this->_defaults, $localParams);
             if ($this->_plugin->pi_autoCacheEn) {
                 $cache = $this->_plugin->pi_autoCache($localParams);
             }
         }
         unset($localParams['DATA']);
 
-        $altPageId = 0;
+        $altPageId = $GLOBALS['TSFE']->id;
         $cache = 0;
 
         if (!empty($globalParams['id'])) {
