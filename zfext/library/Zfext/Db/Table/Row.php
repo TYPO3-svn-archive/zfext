@@ -73,7 +73,7 @@ class Zfext_Db_Table_Row extends Netzelf_Db_Table_Row
                 if (TYPO3_MODE == 'FE') {
                     $beUser = $GLOBALS['BE_USER'];
                     $lang = $GLOBALS['LANG'];
-                    $GLOBALS['LANG'] = t3lib_div::makeInstance('language'); new language();
+                    $GLOBALS['LANG'] = t3lib_div::makeInstance('language');
                     $GLOBALS['LANG']->init($GLOBALS['TSFE']->config['config']['language']);
                     $GLOBALS['BE_USER'] = t3lib_div::makeInstance('t3lib_beUserAuth');
                 }
