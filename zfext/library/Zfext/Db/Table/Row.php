@@ -33,6 +33,47 @@
  */
 class Zfext_Db_Table_Row extends Netzelf_Db_Table_Row
 {
+    public function __construct(array $config = array())
+    {
+        parent::__construct($config);
+        $table = $this->getTable();
+        if ($table instanceof Zfext_Db_Table && $table->autoTranslationEnabled()) {
+            $this->translate();
+        }
+    }
+
+    public function translate($languageUid = null)
+    {
+		global $TCA;
+		$table = $this->getTable()->info(Zend_Db_Table_Abstract::NAME);
+
+        if (!$TCA[$table] || !$TCA[$table]['ctrl']['languageField'] || !$TCA[$table]['ctrl']['transOrigPointerField']) {
+            return false;
+        }
+        /* @var $tsfe tslib_fe */
+        $tsfe = $GLOBALS['TSFE'];
+        if ($languageUid === null) {
+            $languageUid = $tsfe->sys_language_content;
+        }
+        if ($this->_data[$TCA[$table]['ctrl']['languageField']] != $languageUid) {
+            $data = $this->_data;
+            $translated = $tsfe->sys_page->getRecordOverlay(
+                $this->getTable()->info('name'),
+                $data,
+                $languageUid,
+                $tsfe->sys_language_mode
+            );
+            if (isset($translated['_LOCALIZED_UID'])) {
+                $translated['uid'] = $translated['_LOCALIZED_UID'];
+                unset($translated['_LOCALIZED_UID']);
+                $this->_data = $translated;
+                $this->_cache = array();
+                return true;
+            }
+        }
+        return false;
+    }
+
     /* (non-PHPdoc)
      * @see Netzelf_Db_Table_Row::__get()
      */
@@ -121,11 +162,6 @@ class Zfext_Db_Table_Row extends Netzelf_Db_Table_Row
      */
     public function __set($columnName, $value)
     {
-        $this->__get($columnName);
-        $columnName = $this->_transformColumn($columnName);
-        if (array_key_exists($columnName, $this->_overloaded) && $this->_overloaded[$columnName] == 'getReference') {
-            throw new Zfext_Db_Table_Exception('Can not (yet) set values on references');
-        }
         /* if (method_exists($this, $method = 'set'.ucfirst($columnName))) {
             $this->{$method}($value);
             return;

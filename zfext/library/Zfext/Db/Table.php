@@ -59,6 +59,13 @@ class Zfext_Db_Table extends Netzelf_Db_Table
     protected $_rowClass = 'Zfext_Db_Table_Row';
 
     /**
+     * If the record should automatically be translated right after
+     * instanciation
+     * @var boolean
+     */
+    protected $_autoTranslation = true;
+
+   /**
      * Constructor - automatically create table definition,
      * cache and pass it to parent
      *
@@ -78,6 +85,17 @@ class Zfext_Db_Table extends Netzelf_Db_Table
         if (!self::$_tableDefinition->hasTableConfig($this->_name)) {
             $config = $this->_findReferences();
             self::$_tableDefinition->setTableConfig($this->_name, $config);
+        }
+        if ($this->_autoTranslation) {
+            global $TCA;
+            if ($TCA[$this->_name] && $TCA[$this->_name]['ctrl']['languageField'] && $TCA[$this->_name]['ctrl']['transOrigPointerField']) {
+                array_unshift($this->_scopes, array(
+                	'where' => $TCA[$this->_name]['ctrl']['languageField'].' = 0',
+                    'default' => true
+                ));
+            } else {
+                $this->_autoTranslation = false;
+            }
         }
         parent::__construct(self::$_tableDefinition->getTableConfig($this->_name));
     }
@@ -312,5 +330,20 @@ class Zfext_Db_Table extends Netzelf_Db_Table
         }
         self::$_tableToClassNameMap[$tableName] = $className;
         return $className;
+    }
+
+    /**
+     * Get/set if auto translation should be enabled
+     *
+     * @param null|boolean $flag
+     * @return Zfext_Db_Table|boolean
+     */
+    public function autoTranslationEnabled($flag = null)
+    {
+        if ($flag !== null) {
+            $this->_autoTranslation = $flag;
+            return $this;
+        }
+        return $this->_autoTranslation;
     }
 }
