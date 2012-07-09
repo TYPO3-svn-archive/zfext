@@ -56,6 +56,10 @@ class tx_zfext_eid extends tx_zfext
             return;
         }
 
+    	require_once(PATH_t3lib.'class.t3lib_timetracknull.php');
+    	$GLOBALS['TT'] = new t3lib_timeTrackNull;
+    	$GLOBALS['TT']->start();
+
         /* $this->_tsfe = $GLOBALS['TSFE'] = t3lib_div::makeInstance(
         	'tslib_fe',
             $GLOBALS['TYPO3_CONF_VARS'],
