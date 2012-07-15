@@ -26,54 +26,31 @@
  */
 
 /**
- * A little brother of t3lib_extMgm
+ * @deprecated
+ * @category   TYPO3
+ * @package    Zfext
+ * @author     Christian Opitz <co@netzelf.de>
+ */
+class Zfext_ExtMgm extends Zfext_Manager
+{
+}
+
+/**
+ * Everything related to extension configuration
  *
  * @category   TYPO3
  * @package    Zfext
  * @author     Christian Opitz <co@netzelf.de>
  */
-class Zfext_ExtMgm
+class Zfext_Manager
 {
-    const TS_PATH = 'plugin.tx_zfext';
-
     const ZF_LIBRARY = 'zfLibrary';
-
-	/**
-	 * @var array All plugin options
-	 */
-	protected static $_pluginOptions = array();
 
 	protected static $_loadedLibraries = array();
 
-	/**
-	 * @var array Default attributes for addPItoST43()
-	 */
-	protected static $_defaultPluginAttributes = array
-	(
-		'directory' => '',
-		'suffix' => '',
-		'type' => 'list_type',
-		'cached' => false,
-		'controllerDirectory' => 'controllers',
-	    'modulesDirectory' => false,
-		'modules' => false
-	);
-
-	/**
-	 * @var array Default options - added to zfext-resource if altered
-	 */
-	protected static $_defaultPluginOptions = array
-	(
-		'defaultModule' => null,
-		'defaultController' => null,
-		'defaultAction' => null,
-	    'namespace' => null, //Can be overriden
-		'suffixInClassName' => true,
-		'autoloader' => true,
-		'prefixDefaultModule' => false
-	);
-
 	protected static $_ignoreNamespaces = array('Zend','ZendX');
+
+	protected static $_loadedConfigs = array();
 
 	/**
 	 * Registers a library for a given extension.
@@ -117,9 +94,9 @@ class Zfext_ExtMgm
 
 	/**
 	 * Add a library to the include path and init autoload for it if required -
-	 * loads Zend Framework when added with Zfext_ExtMgm::addLibrary
+	 * loads Zend Framework when added with Zfext_Manager::addLibrary
 	 *
-	 * @param string $extKey Extension key or the ZF library only when Zfext_ExtMgm::ZF_LIBRARY
+	 * @param string $extKey Extension key or the ZF library only when Zfext_Manager::ZF_LIBRARY
 	 */
 	public static function loadLibrary($extKey)
 	{
@@ -181,7 +158,7 @@ class Zfext_ExtMgm
 	/**
 	 * Returns if this particular library is already loaded
 	 *
-	 * @param string $extKey Extension key or the ZF library only when Zfext_ExtMgm::ZF_LIBRARY
+	 * @param string $extKey Extension key or the ZF library only when Zfext_Manager::ZF_LIBRARY
 	 * @return boolean
 	 */
 	public static function isLibraryLoaded($extKey)
@@ -232,19 +209,20 @@ class Zfext_ExtMgm
 	 * setup that will proxy plugins over @link tx_zfext::main()
 	 *
 	 * @param string $extKey The extension key
-	 * @param array $options Options and arguments (@see $_defaultPluginAttributes
-	 * and $_defaultPluginOptions)
+	 * @param array $options
 	 */
 	public static function addPlugin($extKey, array $options = array())
 	{
 		$options = array_merge(
-			self::$_defaultPluginAttributes,
+		    array(
+        		'suffix' => '',
+        		'type' => 'list_type',
+        		'cached' => false,
+        		'defaults' => array(),
+        	),
 			$options
 		);
 		$extKey = strtolower($extKey);
-
-		$prefixId = t3lib_extMgm::getCN($extKey).$options['suffix'];
-
 		self::_addPiToSt43(
 			$extKey,
 			'',
@@ -253,43 +231,33 @@ class Zfext_ExtMgm
 			$options['cached']
 		);
 
-		$pluginOptions = array_intersect_key(
-			$options,
-			self::$_defaultPluginOptions
-		);
-
-		$setup = "plugin.{$prefixId}.zfext {\n";
-
-		$dir = trim(str_replace('\\', '/', $options['directory']), "/");
-		$setup .= 'resources.frontcontroller.';
-		if ($options['modules'] && !$options['moduleDirectory']) {
-			$setup .= 'moduledirectory = EXT:'.$extKey.'/'.$dir;
-		}else{
-			$cDir = trim(str_replace('\\', '/', $options['controllerDirectory']), "/");
-			$setup .= 'controllerdirectory = EXT:'.$extKey.'/'.$dir.'/'.$cDir;
-		    if ($options['moduleDirectory']) {
-		        $mDir = is_string($options['moduleDirectory']) ? trim(str_replace('\\', '/', $options['moduleDirectory']), "/") : 'modules';
-			    $setup .= "\nresources.frontcontroller.moduledirectory = EXT:".$extKey.'/'.$dir.'/'.$mDir;
+		$deprecatedKeys = array('directory', 'moduleDirectory', 'modules', 'controllerDirectory', 'defaultModule', 'prefixDefaultModule');
+		foreach ($deprecatedKeys as $deprecatedKey) {
+		    if (isset($options[$deprecatedKey])) {
+		        t3lib_div::deprecationLog('Option "'.$deprecatedKey.'" is deprecated in '.__CLASS__.'::'.__METHOD__);
 		    }
 		}
 
-		if (!empty($options['defaultModule'])) {
-			$setup .= "\nresources.frontcontroller.defaultmodule = ".$options['defaultModule'];
+		foreach (array('Module', 'Controller', 'Action') as $key) {
+		    if (isset($options['default'.$key])) {
+		        $options['defaults'][strtolower($key)] = $options['default'.$key];
+		    }
 		}
 
-		if (!empty($options['prefixDefaultModule'])) {
-			$setup .= "\nresources.frontcontroller.params.prefixDefaultModule = ".$options['prefixDefaultModule'];
+		if (count($options['defaults'])) {
+	        $prefixId = t3lib_extMgm::getCN($extKey).$options['suffix'];
+		    t3lib_extMgm::addTypoScript($extKey, $prefixId.'._DEFAULT_PI_VARS '.self::_array2ts($options['defaults']));
 		}
+	}
 
-		if (count($pluginOptions)) {
-			foreach ($pluginOptions as $key => $value)
-			{
-				$setup .= "\n".$key.' = '.($value === false ? 0 : strval($value));
-			}
-		}
-		$setup .= "\n}";
-
-		t3lib_extMgm::addTypoScriptSetup($setup);
+	protected static function _array2ts($array)
+	{
+	    $ts = '{';
+	    foreach ($array as $key => $value) {
+	        $ts .= "\n".$key.' ';
+	        $ts .= is_array($value) ? self::_array2ts($value) : '= '.$value;
+	    }
+	    return $ts."\n}";
 	}
 
 	protected static function _addPiToSt43($key, $classFile = '', $prefix = '', $type = 'list_type', $cached = 0)
@@ -310,14 +278,12 @@ class Zfext_ExtMgm
             'includeLibs = '.$TYPO3_LOADED_EXT['zfext']['siteRelPath'].'plugin/class.tx_zfext.php'.$EOL.
             'userFunc = tx_zfext->main'.$EOL.
 		    '# ZfExt related settings - dont\'t touch this unless you know what you\'re doing!'.$EOL.
-		    (($key != 'zfext') ? 'zfext = < '.self::TS_PATH.'.zfext'.$EOL : '').
 		    'zfext.signature = '.$key.'.'.$prefixId.$EOL.
             '}'
 		);
 
 			// After ST43:
-		switch($type)
-		{
+		switch($type) {
 			case 'list_type':
 				$addLine = 'tt_content.list.20.'.$key.$prefix.' = < plugin.'.$prefixId;
 			break;
@@ -345,131 +311,153 @@ class Zfext_ExtMgm
 				$addLine = '';
 			break;
 		}
-		if ($addLine)
-		{
+		if ($addLine) {
 			t3lib_extMgm::addTypoScript($key, 'setup', $comment.$EOL.$addLine, 43);
 		}
 	}
 
-	/**
-	 * Get the namespace for the plugin (fi. Tx_Zfext)
-	 *
-	 * @param string $key Extension key
-	 * @param string|null $suffix The suffix to use (eg. _pi1)
-	 * @return string
-	 */
-	public static function getPluginNamespace($prefixId)
+	public static function getConfig($extKey)
 	{
-		$useNamespace = (string) self::getPluginOption($prefixId, 'namespace');
-	    if (strlen($useNamespace))
-	    {
-	        return $useNamespace;
+	    if (isset(self::$_loadedConfigs[$extKey])) {
+	        return self::$_loadedConfigs[$extKey];
+	    }
+	    $configs = array();
+	    $mode = TYPO3_MODE == 'BE' ? 'backend' : 'frontend';
+	    foreach (array('default', $mode) as $key) {
+    	    if (isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['zfext']['config'][$extKey][$key])) {
+    	        $configs[] = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['zfext']['config'][$extKey][$key];
+    	    }
 	    }
 
+	    if (!count($configs)) {
+			throw new RuntimeException('Extension '.$extKey.' is not properly configured for ZFext in '.$mode.' mode');
+	    }
 
-		$extKey = self::getPluginOption($prefixId, 'extKey');
-	    $keyParts = explode('_', $extKey);
-		if (strtolower($keyParts[0]) == 'tx')
-		{
-			unset($keyParts[0]);
-		}
-		$namespace = 'Tx_';
-		foreach ($keyParts as $part)
-		{
-			$namespace .= ucfirst($part);
-		}
+	    $mergedConfig = ($extKey != 'zfext') ? self::getConfig('zfext') : array_shift($configs);
 
-		if (self::getPluginOption($prefixId, 'suffixInClassName'))
-		{
-			$cn = t3lib_extMgm::getCN($extKey);
-		    $suffix = str_replace($cn, '', $prefixId);
+	    foreach ($configs as $config) {
+	        $mergedConfig = t3lib_div::array_merge_recursive_overrule($mergedConfig, $config);
+	    }
 
-		    if (strlen($suffix))
-		    {
-		        $namespace .= '_'.ucfirst(trim($suffix,'_'));
-		    }
+	    return self::$_loadedConfigs[$extKey] = self::_parseConfig($mergedConfig);
+	}
+
+	public static function configure($extKey, $modeOrConfig, array $config = array())
+	{
+	    if (is_array($modeOrConfig)) {
+	        $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['zfext']['config'][$extKey]['default'] = $modeOrConfig;
+	    } else {
+	        $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['zfext']['config'][$extKey][$modeOrConfig] = $config;
+	    }
+	}
+
+	protected function _parseConfig($config)
+	{
+	    $parsed = array();
+		foreach ($config as $key => $value) {
+			if (is_array($value)) {
+				$parsed[$key] = self::_parseConfig($value);
+			} else {
+			    if ($value === null) {
+			        // Assume $key should be removed
+			        continue;
+			    }
+				if (is_string($value) && strpos($value, 'EXT:') === 0) {
+					$pathParts = explode('/', substr($value,4));
+					$value = t3lib_extMgm::extPath(array_shift($pathParts));
+					$value .= implode(DIRECTORY_SEPARATOR,$pathParts);
+				}
+				$parsed[$key] = $value;
+			}
 		}
-		self::setPluginOption($prefixId, 'namespace', $namespace);
-		return $namespace;
+		return $parsed;
 	}
 
 	/**
-	 * Sets all plugin options where the keys of the first level
-	 * are the prefix ids and theyr values are the options for
-	 * that plugin. Merges this options with the default options.
+	 * Registers an Extbase module (main or sub) to the backend interface.
+	 * FOR USE IN ext_tables.php FILES
 	 *
-	 * @param array $options
+	 * (adapted from Tx_Extbase_Utility_Extension::registerModule)
+	 *
+	 * @param string $extensionName The extension name (in UpperCamelCase) or the extension key (in lower_underscore)
+	 * @param string $mainModuleName The main module key, $sub is the submodule key. So $main would be an index in the $TBE_MODULES array and $sub could be an element in the lists there. If $main is not set a blank $extensionName module is created
+	 * @param string $subModuleName The submodule key. If $sub is not set a blank $main module is created
+	 * @param string $position This can be used to set the position of the $sub module within the list of existing submodules for the main module. $position has this syntax: [cmd]:[submodule-key]. cmd can be "after", "before" or "top" (or blank which is default). If "after"/"before" then submodule will be inserted after/before the existing submodule with [submodule-key] if found. If not found, the bottom of list. If "top" the module is inserted in the top of the submodule list.
+	 * @param array $moduleConfiguration The configuration options of the module (icon, locallang.xml file)
+	 * @return void
 	 */
-	protected static function _checkPluginOptions($prefixId)
-	{
-		if (is_array(self::$_pluginOptions[$prefixId])) {
-			return;
+	public static function addModule($extensionName, $mainModuleName = '', $subModuleName = '', $position = '', array $moduleConfiguration = array()) {
+		require_once dirname(__FILE__).'/Module.php';
+	    if (empty($extensionName)) {
+			throw new InvalidArgumentException('The extension name must not be empty', 1239891989);
+		}
+		$extensionKey = t3lib_div::camelCaseToLowerCaseUnderscored($extensionName);
+		$extensionName = str_replace(' ', '', ucwords(str_replace('_', ' ', $extensionName)));
+
+		$defaultModuleConfiguration = array(
+			'access' => 'admin',
+			'icon' => 'EXT:zfext/ext_icon.gif',
+			'labels' => '',
+			'extRelPath' => t3lib_extMgm::extRelPath($extensionKey),
+		    'extKey' => $extensionKey
+		);
+		$moduleConfiguration = t3lib_div::array_merge_recursive_overrule($defaultModuleConfiguration, $moduleConfiguration);
+
+		if ((strlen($mainModuleName) > 0) && !array_key_exists($mainModuleName, $GLOBALS['TBE_MODULES'])) {
+			$mainModuleName = $extensionName . t3lib_div::underscoredToUpperCamelCase($mainModuleName);
+		} else {
+			$mainModuleName = (strlen($mainModuleName) > 0) ? $mainModuleName : 'web';
+		}
+		$moduleSignature = $mainModuleName;
+
+		if ((strlen($subModuleName) > 0)) {
+			$subModuleName = $extensionName . t3lib_div::underscoredToUpperCamelCase($subModuleName);
+			$moduleSignature .= '_' . $subModuleName;
 		}
 
-		$options = (array) $GLOBALS['TSFE']->tmpl->setup['plugin.'][$prefixId.'.']['zfext.'];
+		$moduleConfiguration['name'] = $moduleSignature;
+		$moduleConfiguration['zfext'] = true;
+		$moduleConfiguration['script'] = 'mod.php?M=' . rawurlencode($moduleSignature);
+		$moduleConfiguration['extensionName'] = $extensionName;
+		$moduleConfiguration['configureModuleFunction'] = array(__CLASS__, 'configureModule');
 
-		if (empty($options['signature'])) {
-			throw new Zfext_Exception($prefixId.' is not a ZfExt-plugin!');
-	    }
+		$GLOBALS['TBE_MODULES']['_configuration'][$moduleSignature] = $moduleConfiguration;
 
-	    $parts = explode('.', $options['signature']);
-	    $options['extKey'] = $parts[0];
+		t3lib_extMgm::addModule($mainModuleName, $subModuleName, $position);
+	}
 
-		foreach (self::$_defaultPluginOptions as $key => $val)
-		{
-		    if (!empty($val) && !isset($options[$key])) {
-		        $options[$key] = $val;
-		    }
+	/**
+	 * This method is called from t3lib_loadModules::checkMod and it replaces old conf.php.
+	 *
+	 * (adapted from Tx_Extbase_Utility_Extension::configureModule)
+	 *
+	 * @param string $moduleSignature The module name
+	 * @param string $modulePath Absolute path to module (not used by Extbase currently)
+	 * @return array Configuration of the module
+	 */
+	public function configureModule($moduleSignature, $modulePath) {
+		$moduleConfiguration = $GLOBALS['TBE_MODULES']['_configuration'][$moduleSignature];
+		$iconPathAndFilename = $moduleConfiguration['icon'];
+		if (substr($iconPathAndFilename, 0, 4) === 'EXT:') {
+			list($extensionKey, $relativePath) = explode('/', substr($iconPathAndFilename, 4), 2);
+			$iconPathAndFilename = t3lib_extMgm::extPath($extensionKey) . $relativePath;
 		}
-	    self::$_pluginOptions[$prefixId] = $options;
-	}
+		// TODO: skin support
 
-	/**
-	 * Set an option for a specific plugin
-	 *
-	 * @param string $prefixId
-	 * @param string $key Option key
-	 * @param string $value Option value
-	 */
-	public static function setPluginOption($prefixId, $key, $value)
-	{
-	    self::_checkPluginOptions($prefixId);
+		$moduleLabels = array(
+			'tabs_images' => array(
+				'tab' => $iconPathAndFilename,
+			),
+			'labels' => array(
+				'tablabel' => $GLOBALS['LANG']->sL($moduleConfiguration['labels'] . ':mlang_labels_tablabel'),
+				'tabdescr' => $GLOBALS['LANG']->sL($moduleConfiguration['labels'] . ':mlang_labels_tabdescr'),
+			),
+			'tabs' => array(
+				'tab' => $GLOBALS['LANG']->sL($moduleConfiguration['labels'] . ':mlang_tabs_tab')
+			)
+		);
+		$GLOBALS['LANG']->addModuleLabels($moduleLabels, $moduleSignature . '_');
 
-		if (!is_array(self::$_pluginOptions[$prefixId]))
-	    {
-	        self::$_pluginOptions[$prefixId] = self::$_defaultPluginOptions;
-	    }
-	    self::$_pluginOptions[$prefixId][$key] = $value;
-	}
-
-	/**
-	 * Returns the merged options for a plugin identified by prefixId
-	 *
-	 * @param string $prefixId
-	 * @return array
-	 */
-	public static function getPluginOptions($prefixId, $filterOutEmpty = true)
-	{
-		self::_checkPluginOptions($prefixId);
-
-		return self::$_pluginOptions[$prefixId];
-	}
-
-	/**
-	 * Returns an option for a plugin identified by prefixId
-	 *
-	 * @param string $prefixId
-	 * @param string $key
-	 * @return mixed|null
-	 */
-	public static function getPluginOption($prefixId, $key)
-	{
-		self::_checkPluginOptions($prefixId);
-
-	    if (!isset(self::$_pluginOptions[$prefixId][$key]))
-	    {
-	        return null;
-	    }
-		return self::$_pluginOptions[$prefixId][$key];
+		return $moduleConfiguration;
 	}
 }

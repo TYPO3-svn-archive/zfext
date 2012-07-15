@@ -85,7 +85,7 @@ class tx_zfext_eid extends tx_zfext
         //Seems to be needed prior to 4.3 to only:
         $this->_tsfe->getConfigArray();
 
-        if (empty($this->_tsfe->tmpl->setup['plugin.'][$conf['eid'].'.']['zfext'])) {
+        if (empty($this->_tsfe->tmpl->setup['plugin.'][$conf['eid'].'.']['zfext.'])) {
 	        return;
 	    }
 

@@ -1,7 +1,7 @@
 <?php
 /**
  * Zfext - Zend Framework for TYPO3
- * 
+ *
  * LICENSE
  *
  * This script is part of the TYPO3 project. The TYPO3 project is
@@ -19,7 +19,7 @@
  * GNU General Public License for more details.
  *
  * This copyright notice MUST APPEAR in all copies of the script!
- * 
+ *
  * @copyright  Copyright (c) 2010 Christian Opitz - Netzelf GbR (http://netzelf.de)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU General Public License
  * @version    $Id$
@@ -30,16 +30,16 @@
  * Options are:
  * enable:     Enable error handler (Actually needed to invoke this resource with standard
  *             settings, sets resources.frontcontroller.params.noErrorHandler to true when false)
- * class:      Set a class that should be used as error handler (which must extend 
+ * class:      Set a class that should be used as error handler (which must extend
  *             Zend_Controller_Plugin_Abstract; default is Zend_Controller_Plugin_ErrorHandler)
  * module:     The module name for the error handler. Zfext error handler will be set as default
  *             if this is empty (with the module name)
  * controller: The controller name for the error handler
  * action:     The action name for the error handler
- * 
+ *
  * All options are passed to the constructor of the handler - so if it comes to that
  * it has more options than module/controller/action you can pass them this way too.
- * 
+ *
  * @category   TYPO3
  * @package    Zfext_Application
  * @subpackage Resource
@@ -60,12 +60,12 @@ class Zfext_Application_Resource_Errorhandler extends Zend_Application_Resource_
     	}
     	$this->getBootstrap()->bootstrap('frontcontroller');
     	$front = Zend_Controller_Front::getInstance();
-    	
+
     	if (!$options['enable']) {
     		$front->setParam('noErrorHandler', true);
     		return;
     	}
-    	
+
     	if (!empty($options['class'])) {
     		$front->setParam('noErrorHandler', true);
     		$class = (string) $options['class'];
@@ -73,22 +73,9 @@ class Zfext_Application_Resource_Errorhandler extends Zend_Application_Resource_
     		$class = 'Zend_Controller_Plugin_ErrorHandler';
     	}
     	unset($options['class'], $options['disable']);
-    	
-    	if (empty($options['module']) || $options['module'] == Zfext_ExtMgm::ZFEXT_MODULE_NAME) {
-    		$dispatcher = $front->getDispatcher();
-    		$moduleName = 'zfext';
-    		while($dispatcher->isValidModule($moduleName)) {
-    			$moduleName .= 'zfext';
-    		}
-    		$dispatcher->addControllerDirectory(
-    			t3lib_extMgm::extPath('zfext', 'plugin/controllers'),
-    			$moduleName
-    		);
-    		$options['module'] = $moduleName;
-    	}    	
-    	
+
     	$handler = new $class($options);
-    		
+
     	$front->registerPlugin($handler);
     }
 }

@@ -59,7 +59,7 @@ class Zfext_Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 		->setRequest(new Zfext_Controller_Request_Plugin())
 		->setResponse(new Zfext_Controller_Response_Plugin())
 		->setDispatcher(new Zfext_Controller_Dispatcher_Plugin())
-		->setRouter(new Zfext_Controller_Router_Typo3());
+		->setRouter(new Zfext_Controller_Router_Frontend());
 
 		$this->bootstrap('view');
 		Zend_Controller_Action_HelperBroker::removeHelper('url');

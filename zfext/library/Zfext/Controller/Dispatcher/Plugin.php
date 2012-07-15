@@ -48,6 +48,8 @@ class Zfext_Controller_Dispatcher_Plugin extends Zend_Controller_Dispatcher_Stan
 	 */
 	protected $_prefixDefaultModule = false;
 
+	protected $_appNamespace = null;
+
 	/* (non-PHPdoc)
 	 * @see Controller/Dispatcher/Zend_Controller_Dispatcher_Abstract#setParam()
 	 */
@@ -81,7 +83,20 @@ class Zfext_Controller_Dispatcher_Plugin extends Zend_Controller_Dispatcher_Stan
 			return 'Tx_Zfext_'.$className;
 		}
 
-		$formatedClass = Zfext_ExtMgm::getPluginNamespace(Zfext_Plugin::getInstance()->prefixId);
+		if (!$this->_appNamespace) {
+    		$extKey = TYPO3_MODE == 'BE' ? Zfext_Module::getInstance()->extKey : Zfext_Plugin::getInstance()->extKey;
+    	    $keyParts = explode('_', $extKey);
+    		if (strtolower($keyParts[0]) == 'tx') {
+    			unset($keyParts[0]);
+    		}
+    		$namespace = 'Tx_';
+    		foreach ($keyParts as $part) {
+    			$namespace .= ucfirst($part);
+    		}
+    		$this->_appNamespace = $namespace;
+		}
+
+		$formatedClass = $this->_appNamespace;
 
 		if ($this->_defaultModule != $moduleName || $this->_prefixDefaultModule) {
 			$formatedClass .= '_'.$this->formatModuleName($moduleName);

@@ -32,7 +32,7 @@ if (!isset($toolConf[TYPO3_cliKey])) {
     die('No manifest found for '.TYPO3_cliKey);
 }
 
-Zfext_ExtMgm::loadLibrary($toolConf[TYPO3_cliKey]['extKey']);
+Zfext_Manager::loadLibrary($toolConf[TYPO3_cliKey]['extKey']);
 $options = array(
     'classesToLoad' => $toolConf[TYPO3_cliKey]['manifest']
 );

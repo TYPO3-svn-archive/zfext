@@ -80,18 +80,18 @@ class tx_zfext extends tslib_pibase
 		if (isset(self::$_responseRegistry[$this->prefixId])) {
 		    $response = self::$_responseRegistry[$this->prefixId];
 		}else{
-			$this->setConf($conf);
+			$this->conf = $conf;
 
 			set_error_handler(array($this, 'errorHandler'), $GLOBALS['TYPO3_CONF_VARS']['SYS']['exceptionalErrors']);
 
-			Zfext_ExtMgm::loadLibrary('zfext');
+			Zfext_Manager::loadLibrary('zfext');
 
-			Zfext_ExtMgm::loadLibrary($this->extKey);
+			Zfext_Manager::loadLibrary($this->extKey);
 		    Zfext_Plugin::setInstance($this);
 
 			$application = new Zend_Application(
 				t3lib_extMgm::extPath($this->extKey).'pi1',
-				$this->extractOptions($this->conf['zfext.'])
+				Zfext_Manager::getConfig($this->extKey)
 			);
 			$application->bootstrap()->run();
 
@@ -130,11 +130,7 @@ class tx_zfext extends tslib_pibase
 	    $signature = explode('.', $conf['zfext.']['signature']);
 	    $this->extKey = $signature[0];
 	    $this->prefixId = $signature[1];
-
-	    $controllerPath = t3lib_div::getFileAbsFileName(
-	    	$conf['zfext.']['resources.']['frontcontroller.']['controllerdirectory.'][$this->prefixId]);
-		$extPath = realpath(t3lib_extMgm::extPath($this->extKey));
-		$this->scriptRelPath = substr($controllerPath, strlen($extPath) + 1);
+		$this->scriptRelPath = t3lib_extMgm::extRelPath($this->extKey);
 
 	    $type = $GLOBALS['TSFE']->tmpl->setup['plugin.'][$this->prefixId];
 
@@ -143,50 +139,6 @@ class tx_zfext extends tslib_pibase
 
 		parent::tslib_pibase();
 		parent::pi_setPiVarDefaults();
-	}
-
-	/**
-	 * Set config and merge with referenced conf if so
-	 *
-	 * @param array $conf
-	 */
-	protected function setConf($conf)
-	{
-		if ($conf['zfext'] == '< plugin.tx_zfext.zfext') {
-			// Actually same as in elseif but faster
-			$conf['zfext.'] = t3lib_div::array_merge_recursive_overrule(
-				$GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_zfext.']['zfext.'], $conf['zfext.']);
-		}
-		elseif ($conf['zfext'] && strpos($conf['zfext'], '<') === 0) {
-			$conf['zfext.'] = $this->parseReferencedTS($conf['zfext'], $conf['zfext.']);
-		}
-		$this->conf = $conf;
-	}
-
-	protected function parseReferencedTS($ref, $conf)
-	{
-		$parts = explode('.', trim($ref, "\t <"));
-
-		if (count($parts)) {
-			$first = array_shift($parts);
-			if (is_array($GLOBALS['TSFE']->tmpl->setup[$first.'.'])) {
-				$refConf = $GLOBALS['TSFE']->tmpl->setup[$first.'.'];
-				foreach ($parts as $part) {
-					if ($refConf[$part] && strpos($refConf[$part], '<') === 0) {
-						$refConf = $this->parseReferencedTS($refConf[$part], (array) $refConf[$part.'.']);
-					}elseif (is_array($refConf[$part.'.'])) {
-						$refConf = $refConf[$part.'.'];
-					}else{
-						$refConf = null;
-						break;
-					}
-				}
-			}
-		}
-		if (is_array($refConf)) {
-			$conf = t3lib_div::array_merge_recursive_overrule($refConf, $conf);
-		}
-		return $conf;
 	}
 
 	/**
@@ -237,36 +189,6 @@ class tx_zfext extends tslib_pibase
 		}
 
 		throw new ErrorException($type.': '.$errstr, 0, $errno, $errfile, $errline);
-	}
-
-	/**
-	 * Extracts the options from the TypoScript-Array (removes the dots
-	 * in the keys and replaces EXT: by the extpath if found in values)
-	 *
-	 * @param array $conf
-	 * @return array
-	 */
-	protected function extractOptions($conf)
-	{
-		$dotless = array();
-		foreach ($conf as $key => $value)
-		{
-			if (is_array($value))
-			{
-				$dotless[trim($key,'.')] = $this->extractOptions($value);
-			}
-			else
-			{
-				if (strpos($value, 'EXT:') === 0)
-				{
-					$pathParts = explode('/', substr($value,4));
-					$value = t3lib_extMgm::extPath(array_shift($pathParts));
-					$value .= implode(DIRECTORY_SEPARATOR,$pathParts);
-				}
-				$dotless[trim($key,'.')] = $value;
-			}
-		}
-		return $dotless;
 	}
 }
 

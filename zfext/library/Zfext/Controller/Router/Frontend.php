@@ -31,7 +31,7 @@
  * @subpackage Router
  * @author     Christian Opitz <co@netzelf.de>
  */
-class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
+class Zfext_Controller_Router_Frontend extends Zend_Controller_Router_Abstract
 {
 	const GLOBALS_PATTERN = '/(?:gp|gpvar):(.+)/i';
 
@@ -98,17 +98,6 @@ class Zfext_Controller_Router_Typo3 extends Zend_Controller_Router_Abstract
             $this->_actionKey     => $this->_dispatcher->getDefaultAction(),
             $this->_moduleKey     => $this->_dispatcher->getDefaultModule()
         );
-
-        $pluginOptions = Zfext_ExtMgm::getPluginOptions($this->_plugin->prefixId);
-        if (isset($pluginOptions['defaultModule'])) {
-            $this->_defaults[$this->_moduleKey] = $pluginOptions['defaultModule'];
-        }
-        if (isset($pluginOptions['defaultController'])) {
-            $this->_defaults[$this->_controllerKey] = $pluginOptions['defaultController'];
-        }
-        if (isset($pluginOptions['defaultAction'])) {
-            $this->_defaults[$this->_actionKey] = $pluginOptions['defaultAction'];
-        }
     }
 
 	/**

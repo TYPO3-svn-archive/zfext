@@ -1,7 +1,7 @@
 <?php
 /**
  * Zfext - Zend Framework for TYPO3
- * 
+ *
  * LICENSE
  *
  * This script is part of the TYPO3 project. The TYPO3 project is
@@ -19,7 +19,7 @@
  * GNU General Public License for more details.
  *
  * This copyright notice MUST APPEAR in all copies of the script!
- * 
+ *
  * @copyright  Copyright (c) 2010 Christian Opitz - Netzelf GbR (http://netzelf.de)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU General Public License
  * @version    $Id$
@@ -27,8 +27,8 @@
 
 /**
  * This frontcontroller plugin registers an autoloader for the plugins
- * if they want one (@see Zfext_ExtMgm::$_defaultPluginOptions) 
- * 
+ * if they want one (@see Zfext_Manager::$_defaultPluginOptions)
+ *
  * @category   TYPO3
  * @package    Zfext_Controller
  * @subpackage Plugin
@@ -36,41 +36,38 @@
  */
 class Zfext_Controller_Plugin_Autoloader extends Zend_Controller_Plugin_Abstract
 {
-	protected static $_registeredNamespaces = array(); 
-	
+	protected static $_registeredNamespaces = array();
+
 	/* (non-PHPdoc)
 	 * @see Controller/Plugin/Zend_Controller_Plugin_Abstract#routeShutdown()
 	 */
 	public function routeShutdown(Zend_Controller_Request_Abstract $request)
 	{
 		$prefixId = Zfext_Plugin::getInstance()->prefixId;
-		if (!Zfext_ExtMgm::getPluginOption($prefixId, 'autoloader')) {
-			return;
-		}
-		
+
 		$dispatcher = Zend_Controller_Front::getInstance()->getDispatcher();
 		$directorys = (array) $dispatcher->getControllerDirectory();
-		
+
 		foreach ($directorys as $module => $dir)
 		{
 			if ($module == 'zfext') {
 				continue;
 			}
-			
+
 			$namespace = trim($dispatcher->formatClassName($module, ''), '_');
 			if (in_array($namespace, self::$_registeredNamespaces)) {
 				continue;
 			}
-			
+
 			$dir = str_replace(array("\\",'/'), DIRECTORY_SEPARATOR, $dir);
 			$parts = explode(DIRECTORY_SEPARATOR, $dir);
 			array_pop($parts);
-			
+
 			new Zfext_Application_Module_Autoloader(array(
 				'namespace' => $namespace,
 				'basePath' => implode(DIRECTORY_SEPARATOR, $parts)
 			));
-			
+
 			self::$_registeredNamespaces[] = $module;
 		}
 	}
