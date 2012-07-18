@@ -98,13 +98,13 @@ class Zfext_Manager
 	 *
 	 * @param string $extKey Extension key or the ZF library only when Zfext_Manager::ZF_LIBRARY
 	 */
-	public static function loadLibrary($extKey)
+	public static function loadLibrary($extKey = null)
 	{
 	    if ($extKey != self::ZF_LIBRARY) {
 	        self::loadLibrary(self::ZF_LIBRARY);
 	    }
 
-	    if (self::isLibraryLoaded($extKey)) {
+	    if (!$extKey || self::isLibraryLoaded($extKey)) {
 	        return;
 	    }
 

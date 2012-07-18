@@ -76,6 +76,6 @@ class Zfext_Application_Resource_Errorhandler extends Zend_Application_Resource_
 
     	$handler = new $class($options);
 
-    	$front->registerPlugin($handler);
+    	$front->registerPlugin($handler, 100);
     }
 }

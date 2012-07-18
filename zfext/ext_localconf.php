@@ -34,7 +34,7 @@ Zfext_Manager::configure($_EXTKEY, array(
         ),
 	    'errorhandler' => array(
             'enable' => true,
-            'module' => 'zfext'
+            'module' => 'zfext',
         ),
         'frontcontroller' => array(
             'controllerdirectory' => array(
@@ -42,6 +42,7 @@ Zfext_Manager::configure($_EXTKEY, array(
             ),
             'defaultmodule' => 'default',
             'plugins' => array(
+            	'pluginErrorHandler' => 'Zfext_Controller_Plugin_ErrorHandler', // Handles $TYPO3_CONF_VARS['SYS']['exceptionalErrors'] also
                 'pluginAutoloader' => 'Zfext_Controller_Plugin_Autoloader',
                 'pluginHeadHelpers' => 'Zfext_Controller_Plugin_HeadHelpers'
             )

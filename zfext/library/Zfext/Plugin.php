@@ -32,10 +32,18 @@
  */
 class Zfext_Plugin
 {
+
 	/**
+	 * Latest instance (can be Zfext_Module also)
+	 * @var Zfext_Plugin
+	 */
+	protected static $_instance;
+
+	/**
+	 * The latest loaded plugin instance
 	 * @var tslib_pibase
 	 */
-	protected static $_currentInstance;
+	protected $_plugin;
 
 	/**
 	 * The configs of the current instance
@@ -48,9 +56,83 @@ class Zfext_Plugin
 	 *
 	 * @param tslib_pibase $instance
 	 */
-	public static function setInstance(tslib_pibase $instance)
+	public function __construct(tslib_pibase $instance = null)
 	{
-		self::$_currentInstance = $instance;
+		self::$_instance = $this;
+		$this->_plugin = $instance;
+	}
+
+	/**
+	 * Proxy to plugin instance
+	 *
+	 * @param string $method
+	 * @param array $arguments
+	 * @throws Zfext_Exception
+	 * @return mixed
+	 */
+	public function __call($method, $arguments)
+	{
+	    if (!is_callable(array($this->_getPlugin(), $method))) {
+	        throw new Zfext_Exception('Could not call "'.$method.'"');
+	    }
+	    return call_user_func_array(array($this->_getPlugin(), $method), $arguments);
+	}
+
+	/**
+	 * Proxy to plugin instance
+	 *
+	 * @param string $param
+	 * @return mixed
+	 */
+	public function __get($param)
+	{
+	    return isset($this->_getPlugin()->$param) ? $this->_getPlugin()->$param : null;
+	}
+
+	/**
+	 * Proxy to plugin instance
+	 *
+	 * @param string $param
+	 * @param mixed $value
+	 */
+	public function __set($param, $value)
+	{
+	    $this->_getPlugin()->$param = $value;
+	}
+
+	/**
+	 * Proxy to plugin instance
+	 *
+	 * @param string $param
+	 */
+	public function __isset($param)
+	{
+	    return isset($this->_getPlugin()->$param);
+	}
+
+	/**
+	 * Return current plugin instance (wrapped to eventually do
+	 * further checks later)
+	 *
+	 * @return tslib_pibase
+	 */
+	protected function _getPlugin()
+	{
+	    return $this->_plugin;
+	}
+
+	/**
+	 * Launch an Application for the current plugin/module
+	 */
+	public function run()
+	{
+	    Zfext_Manager::loadLibrary('zfext');
+        Zfext_Manager::loadLibrary($this->extKey);
+		$application = new Zend_Application($this->extKey);
+		$application
+		->setOptions(Zfext_Manager::getConfig($this->extKey))
+		->bootstrap();
+		$application->run();
 	}
 
 	/**
@@ -60,7 +142,7 @@ class Zfext_Plugin
 	 */
 	public static function getInstance()
 	{
-		return self::$_currentInstance;
+		return self::$_instance;
 	}
 
 	/**

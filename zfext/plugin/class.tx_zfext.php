@@ -80,22 +80,8 @@ class tx_zfext extends tslib_pibase
 		if (isset(self::$_responseRegistry[$this->prefixId])) {
 		    $response = self::$_responseRegistry[$this->prefixId];
 		}else{
-			$this->conf = $conf;
-
-			set_error_handler(array($this, 'errorHandler'), $GLOBALS['TYPO3_CONF_VARS']['SYS']['exceptionalErrors']);
-
-			Zfext_Manager::loadLibrary('zfext');
-
-			Zfext_Manager::loadLibrary($this->extKey);
-		    Zfext_Plugin::setInstance($this);
-
-			$application = new Zend_Application(
-				t3lib_extMgm::extPath($this->extKey).'pi1',
-				Zfext_Manager::getConfig($this->extKey)
-			);
-			$application->bootstrap()->run();
-
-			restore_error_handler();
+			$plugin = new Zfext_Plugin($this);
+            $plugin->run();
 
 			$response = Zend_Controller_Front::getInstance()->getResponse();
 			if (!in_array(Zend_Controller_Front::getInstance()->getParam('keepResponse'), array(0, '0', false, 'false'), true)) {
@@ -131,6 +117,7 @@ class tx_zfext extends tslib_pibase
 	    $this->extKey = $signature[0];
 	    $this->prefixId = $signature[1];
 		$this->scriptRelPath = t3lib_extMgm::extRelPath($this->extKey);
+		$this->conf = $conf;
 
 	    $type = $GLOBALS['TSFE']->tmpl->setup['plugin.'][$this->prefixId];
 
@@ -139,56 +126,6 @@ class tx_zfext extends tslib_pibase
 
 		parent::tslib_pibase();
 		parent::pi_setPiVarDefaults();
-	}
-
-	/**
-	 * Catch errors and throw an error exception so that ZF can catch it and output
-	 * it neatly with the errorHandler-plugin.
-	 *
-	 * @param integer $errno
-	 * @param string $errstr
-	 * @param string $errfile
-	 * @param integer $errline
-	 * @param string $errcontext
-	 */
-	public function errorHandler($errno, $errstr, $errfile, $errline, $errcontext)
-	{
-		switch ( $errno ) {
-			case E_USER_ERROR:
-				$type = 'Fatal Error';
-				$exit = TRUE;
-			break;
-			case E_USER_WARNING:
-			case E_WARNING:
-				$type = 'Warning';
-			break;
-			case E_USER_NOTICE:
-			case E_NOTICE:
-			case @E_STRICT:
-				$type = 'Notice';
-			break;
-			case @E_RECOVERABLE_ERROR:
-				$type = 'Catchable';
-			break;
-			default:
-				$type = 'Unknown Error';
-				$exit = true;
-			break;
-		}
-
-		// deprecated erkennen
-		if($errno==E_USER_NOTICE && preg_match('/^.*\(\)\sis\sdeprecated$/U', $errstr))
-		{
-			$stack		= debug_backtrace();
-			$deprecated	= 'Deprecated: Function ' . $stack[1]['args'][0] . ' in ' . $stack[2]['file'] . ' on line ' . $stack[2]['line'];
-			$file		= $stack[2]['file'];
-			$line		= $stack[2]['line'];
-
-			throw new ErrorException($deprecated, 0, $errno, $errfile, $errline);
-			return;
-		}
-
-		throw new ErrorException($type.': '.$errstr, 0, $errno, $errfile, $errline);
 	}
 }
 
