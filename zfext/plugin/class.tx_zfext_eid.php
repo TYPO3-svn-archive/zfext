@@ -81,6 +81,7 @@ class tx_zfext_eid extends tx_zfext
         $this->_tsfe->checkAlternativeIdMethods();
 	    $this->_tsfe->determineId();
         $this->_tsfe->getPageAndRootline();
+        $this->_tsfe->getCompressedTCarray();
 
         //Seems to be needed prior to 4.3 to only:
         $this->_tsfe->getConfigArray();

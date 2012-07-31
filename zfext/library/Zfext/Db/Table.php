@@ -125,16 +125,15 @@ class Zfext_Db_Table extends Netzelf_Db_Table
             throw new Zfext_Db_Table_Exception('No column definitions found for table '.$name);
         }
         foreach ($TCA as $foreignTable => $config) {
-            if ($foreignTable == $name) {
-                continue;
+            if ($foreignTable != $name) {
+                t3lib_div::loadTCA($foreignTable);
             }
-            t3lib_div::loadTCA($foreignTable);
             foreach ((array) $TCA[$foreignTable]['columns'] as $refColumn => $refConfig) {
                 $refConfig = $refConfig['config'];
                 if ($refConfig['type'] == 'group' && $refConfig['internal_type'] == 'db' && $refConfig['allowed'] == $name ||
                     $refConfig['type'] == 'select' && $refConfig['foreign_table'] == $name) {
                     if ($refConfig['MM']) {
-                        // Not yet supportet
+                        // Not yet supported
                         continue;
                     }
                     try {
@@ -165,7 +164,7 @@ class Zfext_Db_Table extends Netzelf_Db_Table
                 continue;
             }
             if (!$foreignTable || $config['MM']) {
-                // Not yet supportet
+                // Not yet supported
                 continue;
             }
             try {

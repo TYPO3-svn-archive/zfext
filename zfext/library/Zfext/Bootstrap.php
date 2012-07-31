@@ -37,6 +37,15 @@ class Zfext_Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 	protected static $_firstRun = true;
 
 	/**
+	 * Set the default auth storage to Zfext_Auth_Storage_Frontend
+	 */
+	protected function _initAuth()
+	{
+	    $storage = new Zfext_Auth_Storage_Frontend();
+	    Zend_Auth::getInstance()->setStorage($storage);
+	}
+
+	/**
 	 * Sticks request, response and dispatcher together. We need to override
 	 * the default frontcontroller-resource with this class resource because
 	 * otherwise it may happen that controller/dispatcher/router are not set

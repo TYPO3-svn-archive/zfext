@@ -115,8 +115,11 @@ class Zfext_Controller_Router_Frontend extends Zend_Controller_Router_Abstract
 	    $this->_init($request, Zfext_Plugin::getInstance());
 
 	    $piVars = (array) $this->_plugin->piVars;
+	    $piVarDefaults = (array) $this->plugin->conf['_DEFAULT_PI_VARS.'];
+
 	    $defaults = $this->_getPageDefaults(0);
-	    $params = array_merge($defaults, $piVars);
+	    $params = $this->_mergeParams($defaults, $this->_mergeParams($piVarDefaults, $piVars));
+
 	    if (isset($_GET['tx_zfext']['path'])) {
 	        if (!empty($_GET['tx_zfext']['path'])) {
     	        $fromRealurl = $this->_parsePath($_GET['tx_zfext']['path'], $params);
@@ -144,7 +147,7 @@ class Zfext_Controller_Router_Frontend extends Zend_Controller_Router_Abstract
 	        $request->setParam($param, $value);
 	    }
 
-	    $this->_defaults = array_merge($this->_defaults, $params);
+	    $this->_defaults = array_merge($this->_defaults, $piVarDefaults);
 
 		return $request;
 	}
@@ -303,9 +306,11 @@ class Zfext_Controller_Router_Frontend extends Zend_Controller_Router_Abstract
 
         if (!$reset) {
             $getParams = $_GET;
+            $localParams = $this->_mergeParams((array) $getParams[$prefixId], $localParams);
+
             unset($getParams[$prefixId], $getParams['id'],$getParams['eID'], $getParams['tx_zfext']);
             $globalParams = $this->_mergeParams($getParams, $globalParams);
-            $localParams = $this->_mergeParams($this->_defaults, $localParams);
+
             if ($this->_plugin->pi_autoCacheEn) {
                 $cache = $this->_plugin->pi_autoCache($localParams);
             }

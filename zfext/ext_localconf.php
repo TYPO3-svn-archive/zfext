@@ -53,6 +53,10 @@ Zfext_Manager::configure($_EXTKEY, array(
                 'adapterNamespace' => 'Zfext_Db_Adapter'
             )
         ),
+        'locale' => array(
+            'bindWithTypo3' => true,
+            'force' => true
+        ),
         'translate' => array(
             'adapter' => 'Zfext_Translate_Adapter_Typo3',
             'data' => 'default',

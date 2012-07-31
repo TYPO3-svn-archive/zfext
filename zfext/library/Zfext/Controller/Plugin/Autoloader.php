@@ -50,10 +50,6 @@ class Zfext_Controller_Plugin_Autoloader extends Zend_Controller_Plugin_Abstract
 
 		foreach ($directorys as $module => $dir)
 		{
-			if ($module == 'zfext') {
-				continue;
-			}
-
 			$namespace = trim($dispatcher->formatClassName($module, ''), '_');
 			if (in_array($namespace, self::$_registeredNamespaces)) {
 				continue;

@@ -22,44 +22,33 @@
  *
  * @copyright  Copyright (c) 2010 Christian Opitz - Netzelf GbR (http://netzelf.de)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU General Public License
- * @version    $Id$
+ * @version    $Id: Bootstrap.php 36506 2010-08-08 15:46:09Z metti $
  */
 
 /**
+ * Extension of Fluids standalone view
+ *
+ * @internal
  * @category   TYPO3
- * @package    Zfext_Application
- * @subpackage Module
+ * @package    Zend_View
+ * @subpackage Fluid
  * @author     Christian Opitz <co@netzelf.de>
  */
-class Zfext_Application_Module_Autoloader extends Zend_Application_Module_Autoloader
+class Zfext_View_Fluid_View extends Tx_Fluid_View_StandaloneView
 {
-	/**
-	 * Overriding the parent method because it behaves wrong when using
-	 * prefixed namespaces.
-	 * <code>
-	 * $loader = new Zend_Application_Module_Autoloader(array(
-	 *     'namespace' => 'Tx_MyExt',
-	 *     'basePath'  => '/path/to/tx_myextension/plugin/',
-	 * ))
-	 * </code>
-	 * The class names in there are f.i. Tx_MyExt_Model_DbTable_Pages
-	 * Problem:
-	 * Parent method detects 'Tx' to be it's namespace and not 'Tx_MyExt'
-	 * Hacked that here.
-	 *
-	 * @param string $class
-	 * @return string|boolean False if not matched other wise the correct path
-	 */
-	public function getClassPath($class)
-	{
-		$namespace = $this->getNamespace();
-		if (strpos($class, $namespace) !== 0)
-		{
-			return false;
-		}
-		$this->_namespace = null;
-		$classPath = parent::getClassPath($class);
-		$this->setNamespace($namespace);
-		return $classPath;
-	}
+    public function __construct()
+    {
+        parent::__construct();
+        $extensionName = t3lib_div::underscoredToLowerCamelCase(Zfext_Plugin::getInstance()->extKey);
+        $this->controllerContext->getRequest()->setControllerExtensionName($extensionName);
+    }
+
+    /**
+     * @internal
+     * @return Tx_Fluid_Core_ViewHelper_TemplateVariableContainer
+     */
+    public function getTemplateVariableContainer()
+    {
+        return $this->baseRenderingContext->getTemplateVariableContainer();
+    }
 }

@@ -325,7 +325,7 @@ class Zfext_Manager
 	    $mode = TYPO3_MODE == 'BE' ? 'backend' : 'frontend';
 	    foreach (array('default', $mode) as $key) {
     	    if (isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['zfext']['config'][$extKey][$key])) {
-    	        $configs[] = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['zfext']['config'][$extKey][$key];
+    	        $configs[] = self::_parseConfig($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['zfext']['config'][$extKey][$key]);
     	    }
 	    }
 
@@ -339,7 +339,7 @@ class Zfext_Manager
 	        $mergedConfig = t3lib_div::array_merge_recursive_overrule($mergedConfig, $config);
 	    }
 
-	    return self::$_loadedConfigs[$extKey] = self::_parseConfig($mergedConfig);
+	    return self::$_loadedConfigs[$extKey] = $mergedConfig;
 	}
 
 	public static function configure($extKey, $modeOrConfig, array $config = array())

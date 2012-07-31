@@ -89,7 +89,7 @@ class Zfext_Translate_Adapter_Typo3 extends Zend_Translate_Adapter
 
         // Try to load the configured files
         if ($data === 'default') {
-            $paths = array('locallang.xml');
+            $paths = array('locallang_db.xml', 'locallang.xml');
         }elseif(is_string($data)) {
             $paths = array($data);
         }elseif(is_array($data)) {
@@ -105,7 +105,7 @@ class Zfext_Translate_Adapter_Typo3 extends Zend_Translate_Adapter
         foreach ($paths as $path) {
             $basePath = substr($path, 0, 3) === 'EXT' ? $path : $rootPath.ltrim($path, '\\/');
             foreach ($langKeys as $langKey) {
-		        $translationData = array_merge(
+		        $translationData = t3lib_div::array_merge_recursive_overrule(
 		            $translationData,
 		            (array) t3lib_div::readLLfile($basePath, $langKey, $GLOBALS['TSFE']->renderCharset)
 		        );

@@ -22,44 +22,32 @@
  *
  * @copyright  Copyright (c) 2010 Christian Opitz - Netzelf GbR (http://netzelf.de)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU General Public License
- * @version    $Id$
+ * @version    $Id: Typo3.php 62259 2012-05-15 14:13:12Z metti $
  */
 
 /**
  * @category   TYPO3
- * @package    Zfext_Application
- * @subpackage Module
+ * @package    View_Fluid
+ * @subpackage Helpers
  * @author     Christian Opitz <co@netzelf.de>
  */
-class Zfext_Application_Module_Autoloader extends Zend_Application_Module_Autoloader
+class Zfext_View_Fluid_Helpers_Translate_ExtbaseBridge extends Tx_Extbase_Utility_Localization
 {
-	/**
-	 * Overriding the parent method because it behaves wrong when using
-	 * prefixed namespaces.
-	 * <code>
-	 * $loader = new Zend_Application_Module_Autoloader(array(
-	 *     'namespace' => 'Tx_MyExt',
-	 *     'basePath'  => '/path/to/tx_myextension/plugin/',
-	 * ))
-	 * </code>
-	 * The class names in there are f.i. Tx_MyExt_Model_DbTable_Pages
-	 * Problem:
-	 * Parent method detects 'Tx' to be it's namespace and not 'Tx_MyExt'
-	 * Hacked that here.
-	 *
-	 * @param string $class
-	 * @return string|boolean False if not matched other wise the correct path
-	 */
-	public function getClassPath($class)
-	{
-		$namespace = $this->getNamespace();
-		if (strpos($class, $namespace) !== 0)
-		{
-			return false;
-		}
-		$this->_namespace = null;
-		$classPath = parent::getClassPath($class);
-		$this->setNamespace($namespace);
-		return $classPath;
-	}
+    /**
+     * Let Tx_Extbase_Utility_Localization load a locallang.xml from the root of
+     * your extension rather than from EXT:ext/Resources/Public/Language
+     *
+     * @param unknown_type $extKey
+     */
+    public static function load($extKey)
+    {
+        $extensionName = t3lib_div::underscoredToLowerCamelCase($extKey);
+
+        $locallangPath = parent::$locallangPath;
+        parent::$locallangPath = '';
+
+        parent::translate('foo', $extensionName);
+
+        parent::$locallangPath = $locallangPath;
+    }
 }
