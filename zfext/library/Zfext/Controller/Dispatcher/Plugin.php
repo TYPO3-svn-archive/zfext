@@ -139,7 +139,7 @@ class Zfext_Controller_Dispatcher_Plugin extends Zend_Controller_Dispatcher_Stan
             if (!Zend_Loader::isReadable($test)) {
                 return false;
             }
-            Zend_Loader::loadFile($test);
+            Zend_Loader::loadFile($test, null, true);
         }
         if (!$request->getActionName()) {
             // Assume that check is not for action
