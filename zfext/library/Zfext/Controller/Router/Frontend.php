@@ -501,7 +501,7 @@ class Zfext_Controller_Router_Frontend extends Zend_Controller_Router_Abstract
     	    	$where .= ' AND pid <> '.$GLOBALS['TSFE']->id;
     	    }
 
-            $rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('pid, select_key', 'tt_content', $where);
+            $rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('pid, select_key', 'tt_content', $where, '', 'sorting');
             foreach ($rows as $row) {
                 $this->_pageDefaults[$row['pid']] = array_merge(
                     $this->_defaults,
